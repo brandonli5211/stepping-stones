@@ -1,0 +1,48 @@
+/* Colour tokens. Decide the final palette in docs/UI_OUTLINE.md ("Colours and what they mean"),
+   then change the values here only — components use the variable names, never raw hex codes. */
+:root {
+  --color-bg: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-text: #1f2328;
+  --color-muted: #6b7280;
+  --color-border: #e3e3df;
+  --color-accent: #2f5bea;
+
+  /* status colours (placeholders) */
+  --color-completed: #1a7f37; /* step done */
+  --color-missed: #cf222e;    /* required step missed */
+  --color-partial: #b26b00;   /* e.g. logged but not said aloud */
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+body { margin: 0; }
+a { color: var(--color-accent); }
+
+.app-header {
+  padding: 12px 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.brand { font-weight: 700; text-decoration: none; color: var(--color-text); }
+.app-main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+.meta { color: var(--color-muted); }
+
+.table { width: 100%; border-collapse: collapse; background: var(--color-surface); }
+.table th, .table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--color-border); }
+
+.transcript { list-style: none; padding: 0; display: grid; gap: 8px; }
+.turn {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+.turn-agent { border-left: 3px solid var(--color-accent); }
+.speaker { font-weight: 600; text-transform: capitalize; }
+.acts { grid-column: 2; font-size: 12px; color: var(--color-muted); }
