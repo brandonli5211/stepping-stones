@@ -1,0 +1,97 @@
+{
+  "task_type": "transfer money",
+  "source_dataset": "gridspace-stanford-harper-valley",
+  "model_example_sid": "3c2099b952d749d3",
+  "notes": "Agent log is a single form submit per call (here at +29.9s, between turns 8 and 9), not one event per step. Each step's action_logged is the key-value pair from that submit that the step collected. Transcripts are the human_transcript field, verbatim.",
+  "steps": [
+    {
+      "order": 1,
+      "step_name": "Greet and open",
+      "step_description": "State the bank name and your own name, then ask how you can help.",
+      "model_example": {
+        "agent_turns": [
+          { "index": 1, "transcript": "hello this is harper valley national bank my name is jennifer how can i help you today" }
+        ],
+        "caller_reply": "uh hi my name is patricia davis i would like to transfer money between my accounts",
+        "action_logged": null
+      }
+    },
+    {
+      "order": 2,
+      "step_name": "Collect transfer amount",
+      "step_description": "Ask how much the caller wants to transfer.",
+      "model_example": {
+        "agent_turns": [
+          { "index": 3, "transcript": "okay and what is the transfer amount" }
+        ],
+        "caller_reply": "the amount is seventy nine dollars",
+        "action_logged": { "transfer amount": "79" }
+      }
+    },
+    {
+      "order": 3,
+      "step_name": "Collect source account",
+      "step_description": "Ask which account the money comes from (checking or savings).",
+      "model_example": {
+        "agent_turns": [
+          { "index": 5, "transcript": "and what is the source account" }
+        ],
+        "caller_reply": "uh from my savings account",
+        "action_logged": { "transfer source account": "savings" }
+      }
+    },
+    {
+      "order": 4,
+      "step_name": "Collect destination account",
+      "step_description": "Ask which account the money goes to (checking or savings).",
+      "model_example": {
+        "agent_turns": [
+          { "index": 7, "transcript": "okay and the destination account" }
+        ],
+        "caller_reply": "to my checking account",
+        "action_logged": { "transfer destination account": "checking" }
+      }
+    },
+    {
+      "order": 5,
+      "step_name": "Submit and confirm transfer",
+      "step_description": "Submit the transfer, then read back amount, source and destination to confirm it is done.",
+      "model_example": {
+        "agent_turns": [
+          { "index": 9, "transcript": "perfect so seventy nine dollars has been transferred from your savings account to your checking account" }
+        ],
+        "caller_reply": null,
+        "action_logged": {
+          "task_type": "transfer money",
+          "transfer amount": "79",
+          "transfer source account": "savings",
+          "transfer destination account": "checking"
+        }
+      }
+    },
+    {
+      "order": 6,
+      "step_name": "Offer further help",
+      "step_description": "Ask whether the caller needs anything else. In the model call this is the second half of turn 9.",
+      "model_example": {
+        "agent_turns": [
+          { "index": 9, "transcript": "is there anything else i can help you with" }
+        ],
+        "caller_reply": "no that's it thank you",
+        "action_logged": null
+      }
+    },
+    {
+      "order": 7,
+      "step_name": "Close",
+      "step_description": "Thank the caller and end the call.",
+      "model_example": {
+        "agent_turns": [
+          { "index": 11, "transcript": "thank you for calling you have a great day" }
+        ],
+        "caller_reply": null,
+        "action_logged": null
+      }
+    }
+  ]
+}
