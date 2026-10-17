@@ -1,68 +1,81 @@
 # UI outline
 
-> **Status: skeleton.** The pages below are a starting proposal based on the MVP features. Each page becomes an **epic ticket** on the Kanban board; its features become **sub-tickets** we assign. Fill in the `> ✏️` prompts.
+> **Status: draft.** The pages below come from our Figma file ([Stepping Stones — UI Mockup](https://www.figma.com/design/tgQYPY631Tg5njDsoBYGNJ/Stepping-Stones-%E2%80%94-UI-Mockup?node-id=12-99)). Each page becomes an **Epic** on the board, each section of the page a **Feature**, and each piece of work a **Task** (see "From outline to tickets" at the bottom). Fill in the `> ✏️` prompts.
 
 ## Who uses it
-> ✏️ Primary user: the agent, reviewing their own calls after a shift. Secondary: a coach/QA lead. Do we build coach views in the MVP, or agent-only?
+The **agent**, reviewing their own calls after a shift. Every page has the same left nav: **My calls · Progress · Procedures**, with the agent's name at the bottom.
+> ✏️ Do coaches/QA get their own views in the MVP, or agent-only? How do we pick the agent without a login (dropdown? `?agent=` in the URL?)
 
 ## Pages
 
-### Page 1: Call list (`/`) — exists as a basic table
-**Purpose:** the agent sees their recent calls and picks one to review.
-| Feature | What it does | Status |
-|---------|--------------|--------|
-| Call table | Call ID, task type, date, score | basic version built (no score/date yet) |
-| Score badge | Score coloured by band | |
-| Filter by task type / agent | | |
-> ✏️ Anything else? Sort order? Empty state?
+### 1. Home / Your week — Figma `129:332` (older version: `13:56`)
+**Purpose:** the landing page. How am I doing this week, and what is the one thing to fix?
+| Feature | What it does |
+|---------|--------------|
+| Weekly score card | Average call score this week (ring, out of 100), band, change from last week, calls reviewed |
+| Tip card | The single highest-value fix ("This one step is worth 55 points…") with a link to its procedure |
+| Your next steps | Steps missed most in the last 20 calls: stone history row, "Missed 3 of 6 calls", a tip |
+| What you're doing well | Steps done consistently, streaks |
+| Recent calls | Date, task type, score, band, one-line summary, link to Call review |
+> ✏️ Owner: ______ · Which features are MVP vs later? Do we keep filters from the older `13:56` version (call type, has missed steps)?
 
-### Page 2: Post-call summary (`/calls/:callId`) — exists as transcript only
-**Purpose:** the main coaching screen. What did I do, what did I miss, what's my score?
-| Feature | What it does | Status |
-|---------|--------------|--------|
-| Step checklist | Each required step from the template: completed / missed | |
-| Score | completed ÷ required, e.g. 3/4 = 75% | |
-| Flags | Plain-language note for each missed step | |
-| Evidence | Click a completed step → highlight the turn that proved it | |
-| Transcript | Agent and customer turns | basic version built |
-| Logged fields | What the agent captured (`captured_by_agent`) | basic version built |
-> ✏️ Layout: checklist on the left, transcript on the right? Score at the top?
+### 2. Call review — Figma `62:76` (loading state: `20:316`)
+**Purpose:** the core coaching screen for one call. What did I do, what did I miss, what's my score?
+| Feature | What it does |
+|---------|--------------|
+| Header + score summary | Task type, call id, score ring (segments per step), "6 of 7 steps done right", points lost, plain-language summary |
+| Transcript | Every turn with timestamp; evidence turns tinted green and labelled; wrong turns red with the reason |
+| Required steps path | One stone per template step with its status |
+| Step detail | Description, points by part, evidence quote, field check (caller asked vs logged), "Next time, say something like…" |
+| Flags | One card per failed step with points lost |
+| "I did do this" | Agent disputes a flag → step becomes Under review |
+| Loading state | "Reviewing your call" animation |
+> ✏️ Owner: ______ · MVP statuses: Completed/Missed only, or also Wrong / Under review?
 
-### Page 3: Progress (`/agents/:agentId/progress`)
+### 3. Procedures — Figma `71:147` (older version: `13:334`)
+**Purpose:** show the required steps for each call type, how many points each is worth, and what to say.
+| Feature | What it does |
+|---------|--------------|
+| Procedure list | All 8 HVB task types with step counts (only transfer money is written so far) |
+| How a call is scored | Explains the 100-point model and severity bands |
+| Procedure steps | Step number, name, points chip, description, "Say something like", logged-field chips, parts |
+> ✏️ Owner: ______ · Read-only for MVP? Do we show personal stats per step (from `13:334`)?
+
+### 4. Progress — Figma `44:464`
 **Purpose:** is my step-completion rate improving?
-| Feature | What it does | Status |
-|---------|--------------|--------|
-| Completion-rate chart | Rate per coaching week | |
-| Most-missed steps | Which steps I skip most often | |
-| Per-task-type breakdown | | |
-> ✏️ HVB only covers ~4 real days. How do we label synthetic coaching weeks honestly?
+| Feature | What it does |
+|---------|--------------|
+| Step completion chart | % per week (synthetic weeks, labelled "Demo data") |
+| By call type | Completion % per task type |
+| Steps you skip most | One stone per call, oldest to newest, with a summary |
+> ✏️ Owner: ______ · How do we label synthetic coaching weeks honestly?
 
-### Page 4 (optional): Templates (`/templates`)
-**Purpose:** show the required steps for each task type, so agents (and Genesys) see what's being checked.
-> ✏️ Read-only for MVP? Editable later ("configurable quality expectations")?
+### 5. Foundations (shared) — Figma `20:274`, `12:98`
+**Purpose:** the shared design language every page uses.
+| Feature | What it does |
+|---------|--------------|
+| App layout + nav | Left nav, page header, cards |
+| Stone states | Completed (solid), Missed (cracked), Wrong (✕), Under review (dashed), Procedure step (brand teal). Shape carries the meaning, not just colour |
+| Score bands | On track 85–100 · Getting there 60–84 · Focus here under 60 |
+| Colour tokens | Exact values from Figma, stored in `frontend/src/index.css` |
+> ✏️ Owner: ______
 
 ## Colours and what they mean
+| Colour | Means | Used on |
+|--------|-------|---------|
+| Teal (brand) | Navigation, procedure steps, primary actions | Nav, Procedures |
+| Green | Step completed · score "On track" | Stones, evidence turns, score chips |
+| Amber / yellow | Tips · score "Getting there" | Tip card, score chips |
+| Red | Step missed or wrong · score "Focus here" | Stones, flags, wrong turns |
+| Grey dashed | Under review | Stones |
+> ✏️ Copy the exact hex values from Figma.
 
-Values live in `frontend/src/index.css` as CSS variables. Change them there only.
-
-| Token | Placeholder | Means | Used on |
-|-------|-------------|-------|---------|
-| `--color-completed` | green `#1a7f37` | step done | checklist, score ≥ ___% |
-| `--color-missed` | red `#cf222e` | required step missed | checklist, flags, score < ___% |
-| `--color-partial` | amber `#b26b00` | e.g. logged but never said aloud | checklist |
-| `--color-accent` | blue `#2f5bea` | links, agent turns, primary buttons | everywhere |
-| `--color-muted` | grey `#6b7280` | secondary text | metadata |
-> ✏️ Decide score bands (e.g. green ≥ 90%, amber 60–89%, red < 60%). Don't use colour alone: pair it with an icon or word (✓ Completed / ✗ Missed) for colour-blind users.
-
-## Ticket structure (for the Kanban board)
+## From outline to tickets
+> ✏️ To be decided with the team (see the board guide, issue #17). Starting proposal:
 
 ```
-EPIC: Post-call summary page
- ├── Backend: GET /api/conversations/{id}/result returns step results + score
- ├── Frontend: StepChecklist component
- ├── Frontend: ScoreBadge component (uses colour tokens)
- ├── Frontend: highlight evidence turn in Transcript
- └── Design: layout sketch
+EPIC      one per page above, plus system epics (Templates & data, Scoring, README, Board setup)
+ └─ FEATURE   one per row in that page's feature table
+     └─ TASK      one PR, one owner, 1–3 days (e.g. "Build StepStone component", "GET /api/conversations/{id}/result")
 ```
-
-> ✏️ Make one epic per page above, plus non-page epics: "Templates + scoring engine" (backend) and "HVB data ingest".
+Use GitHub sub-issues to nest them, and labels `type: epic` / `type: feature` / `type: task` plus an area label (`frontend`, `backend`, `design`, `docs`).
