@@ -1,0 +1,67 @@
+:root {
+  color: #1c1917;
+  background: #f6f3ee;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0.4rem 0 1.5rem;
+  font-size: 2.4rem;
+  font-weight: 500;
+}
+
+.call {
+  background: #fff;
+  border: 1px solid #e4ddd3;
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem 1.4rem;
+}
+
+.label {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9a3412;
+}
+
+.call h2 {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 1.7rem;
+  font-weight: 500;
+}
+
+.call p {
+  margin: 0.2rem 0;
+}
+
+.call ul {
+  margin: 1rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.health {
+  margin-top: 1.25rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: #57534e;
+}

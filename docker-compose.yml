@@ -1,0 +1,50 @@
+# Local development stack: Postgres + FastAPI + React (Vite)
+#   Frontend  http://localhost:5173
+#   Backend   http://localhost:8000   (API docs at /docs; set BACKEND_PORT in .env if 8000 is taken)
+#   Postgres  localhost:5432   (set POSTGRES_PORT in .env if 5432 is taken)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stepping}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stepping}
+      POSTGRES_DB: ${POSTGRES_DB:-stepping_stones}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stepping} -d ${POSTGRES_DB:-stepping_stones}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stepping}:${POSTGRES_PASSWORD:-stepping}@db:5432/${POSTGRES_DB:-stepping_stones}
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

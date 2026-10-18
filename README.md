@@ -1,39 +1,128 @@
-# Genesys conversation PoC
+# Stepping Stones
 
-A single conversation flowing through Python, MongoDB, Spring Boot, and React. The MongoDB document uses a string `_id` of `"1"` and stores transcript entries as `{ "speaker", "text" }` objects.
+Post-call coaching for contact-centre agents. After a templated call, it shows which required steps the agent completed, which ones they missed, and a score.
 
-## Run it
+**TOo BAD** · UofT FTL Cohort 9 × Genesys
 
-1. Start MongoDB on port 27017.
-2. From this directory, install the dependency and load the three-conversation ABCD preview from the official repository:
+The app runs as **React → FastAPI → PostgreSQL**. That replaces the first proof of concept (Python → MongoDB → Java Spring Boot → React).
 
-   ```sh
-   pip install -r requirements.txt
-   python3 load_conversation.py
-   ```
+---
 
-   The loader replaces the demo records in genesys_poc.conversations. API IDs 1, `2`, and 3 map to the sample's original ABCD conversation IDs. It needs an internet connection to fetch the preview from [the ABCD repository](https://github.com/asappresearch/abcd).
+## Tech stack
 
-3. Start the Java API:
+| Piece | What it is | Why it is here |
+| --- | --- | --- |
+| React + Vite | The agent screen, at http://localhost:5173 | The UI stays a client. It shows the result. It does not decide if a step was completed. |
+| FastAPI | The API, at http://localhost:8000/docs | Loading calls, checking steps, scoring, and the API are all Python. `/docs` lists every endpoint. |
+| PostgreSQL 16 | The database | A transcript is one nested document. Progress questions are filters: this agent, this task type, this step. SQL does both. Postgres can still store loose JSON. |
+| Docker Compose | Starts all three | One command for local development. |
 
-   ```sh
-   cd backend-java
-   mvn spring-boot:run
-   ```
+Python was chosen over a second Java service because the product is a checker. The rubric and the service that explains it should be the same code.
 
-   It reads genesys_poc.conversations and serves `GET http://localhost:8080/api/conversation/1`.
+## Getting started
 
-4. Create the React app once, then copy this directory's `App.js` over `frontend-react-app/src/App.js`:
+You need [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-   ```sh
-   npx create-react-app frontend-react-app
-   ```
+```bash
+git clone https://github.com/brandonli5211/stepping-stones.git
+cd stepping-stones
+docker compose up --build
+```
 
-   On Windows PowerShell, run `Copy-Item App.js frontend-react-app/src/App.js` from the project root.
+| Service | URL |
+| --- | --- |
+| App | http://localhost:5173 |
+| API docs | http://localhost:8000/docs |
+| Postgres | `localhost:5432` |
 
-   In another terminal, start the frontend:
+The page should show a sample **Pay bill** call and **Backend health: ok (database: connected)**.
 
-   ```sh
-   cd frontend-react-app
-   npm start
-   ```
+If port 8000 or 5432 is already taken, copy `.env.example` to `.env` and set `BACKEND_PORT` or `POSTGRES_PORT`. Details are in [docs/SETUP.md](docs/SETUP.md).
+
+## Project structure
+
+```
+backend/             FastAPI app (health check today)
+frontend/            React app (one sample call today)
+docs/SETUP.md        How to run it, and port conflicts
+docker-compose.yml   Postgres + API + UI
+```
+
+Templates, the step checker, and the real coaching screens are not in this starter yet.
+
+## How to fill in your section
+
+Four sections below are blank on purpose. Each one has a suggested owner. Claim yours, edit only that section, and open a pull request.
+
+1. On GitHub, open `README.md`, click the pencil, and choose **Create a new branch**.
+2. Name the branch `docs/readme-<section>` (for example `docs/readme-features`).
+3. Replace the suggestion under your section with a few short sentences. Put your name on the owner line.
+4. Open a pull request titled `README: <section>` and ask one teammate to review it.
+
+---
+
+## What it is
+
+**Suggested owner:** [@TroubleVaser](https://github.com/TroubleVaser)
+
+**How to fill this in:** 3–5 sentences. Say that feedback today is late, vague, and based on a small sample of calls. Say that a polite call, even one the customer rates 10/10, can still skip required steps. Say who it helps (new hires, current agents, coaches) and where it fits (after the transcript exists, before the next shift, not live during the call).
+
+_Replace this paragraph with that write-up._
+
+## Features
+
+**Suggested owner:** Diego ([@DiegoFigarella](https://github.com/DiegoFigarella))
+
+**How to fill this in:** a short list, one line each, for the first version and for later.
+
+- First version: templates for 1–3 task types, a post-call summary (completed, missed, flags, score), progress over time, and calls loaded from HarperValleyBank.
+- Later: a peer example for a missed step, weighted steps, branching calls, and better detection.
+- Add one worked score. The replace-card example is 3 of 4 steps = 75%, because the agent never said the card was ordered.
+
+_Replace this list with your version._
+
+## Dataset
+
+**Suggested owner:** Ozan ([@ozantimur](https://github.com/ozantimur))
+
+**How to fill this in:** what HarperValleyBank already gives us, and what we add.
+
+- It gives task type, agent id, separate agent and customer turns, and what the agent logged.
+- We add the template, the checker, the score, and the screen.
+- Say that the calls are role-play, and cite Wu et al. 2020, arXiv:2010.13929, CC BY 4.0.
+- Dataset: https://github.com/cricketclub/gridspace-stanford-harper-valley
+
+_Replace this list with your version._
+
+## How we work
+
+**Suggested owner:** [@thlasagna](https://github.com/thlasagna)
+
+**How to fill this in:** the practical rules, in a short list.
+
+- Branch names, and how a pull request names the issue it closes.
+- One reviewer per pull request.
+- How a ticket on the board moves (Backlog → Ready → In progress → In review → Done).
+- Where the team asks questions.
+
+_Replace this list with your version._
+
+---
+
+## Contributors
+
+Add your focus on the same pull request as your section. The handoff has not confirmed which handle is Anton and which is Tugra, so claim the row that is yours.
+
+| Name | Focus | GitHub |
+| --- | --- | --- |
+| Brandon | UI, stack, reviews | [@brandonli5211](https://github.com/brandonli5211) |
+| Diego | Templates and data | [@DiegoFigarella](https://github.com/DiegoFigarella) |
+| Ozan | Scoring | [@ozantimur](https://github.com/ozantimur) |
+| _Anton or Tugra_ | _add your focus_ | [@thlasagna](https://github.com/thlasagna) |
+| _Anton or Tugra_ | _add your focus_ | [@TroubleVaser](https://github.com/TroubleVaser) |
+
+## Links
+
+- Team repo: https://github.com/brandonli5211/stepping-stones
+- Figma: [Stepping Stones — UI Mockup](https://www.figma.com/design/tgQYPY631Tg5njDsoBYGNJ/Stepping-Stones-%E2%80%94-UI-Mockup?node-id=12-99)
+- Dataset: https://github.com/cricketclub/gridspace-stanford-harper-valley
