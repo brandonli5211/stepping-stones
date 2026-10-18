@@ -63,7 +63,7 @@ Four sections below are blank on purpose. Each one has a suggested owner. Claim 
 
 ## What it is
 
-**Suggested owner:** [@TroubleVaser](https://github.com/TroubleVaser)
+**Suggested owner:** [Someone write this] 
 
 **How to fill this in:** 3–5 sentences. Say that feedback today is late, vague, and based on a small sample of calls. Say that a polite call, even one the customer rates 10/10, can still skip required steps. Say who it helps (new hires, current agents, coaches) and where it fits (after the transcript exists, before the next shift, not live during the call).
 
@@ -71,7 +71,7 @@ _Replace this paragraph with that write-up._
 
 ## Features
 
-**Suggested owner:** Diego ([@DiegoFigarella](https://github.com/DiegoFigarella))
+**Suggested owner:** [Someone write this]
 
 **How to fill this in:** a short list, one line each, for the first version and for later.
 
@@ -83,7 +83,7 @@ _Replace this list with your version._
 
 ## Dataset
 
-**Suggested owner:** Ozan ([@ozantimur](https://github.com/ozantimur))
+**Suggested owner:** [Someone write this] 
 
 **How to fill this in:** what HarperValleyBank already gives us, and what we add.
 
@@ -96,7 +96,7 @@ _Replace this list with your version._
 
 ## How we work
 
-**Suggested owner:** [@thlasagna](https://github.com/thlasagna)
+**Suggested owner:** [Someone write this] 
 
 **How to fill this in:** the practical rules, in a short list.
 
@@ -115,11 +115,11 @@ Add your focus on the same pull request as your section. The handoff has not con
 
 | Name | Focus | GitHub |
 | --- | --- | --- |
-| Brandon | UI, stack, reviews | [@brandonli5211](https://github.com/brandonli5211) |
-| Diego | Templates and data | [@DiegoFigarella](https://github.com/DiegoFigarella) |
-| Ozan | Scoring | [@ozantimur](https://github.com/ozantimur) |
-| _Anton or Tugra_ | _add your focus_ | [@thlasagna](https://github.com/thlasagna) |
-| _Anton or Tugra_ | _add your focus_ | [@TroubleVaser](https://github.com/TroubleVaser) |
+| Brandon | TBA| [@brandonli5211](https://github.com/brandonli5211) |
+| Diego | TBA | [@DiegoFigarella](https://github.com/DiegoFigarella) |
+| Ozan | TBA | [@ozantimur](https://github.com/ozantimur) |
+| Anton | TBA | [@thlasagna](https://github.com/thlasagna) |
+| Tugra | TBA | [@TroubleVaser](https://github.com/TroubleVaser) |
 
 ## Links
 
