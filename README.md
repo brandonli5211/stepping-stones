@@ -111,7 +111,7 @@ _Replace this list with your version._
 
 ## Contributors
 
-Add your focus on the same pull request as your section. The handoff has not confirmed which handle is Anton and which is Tugra, so claim the row that is yours.
+Add your focus on the same pull request as your section.
 
 | Name | Focus | GitHub |
 | --- | --- | --- |
