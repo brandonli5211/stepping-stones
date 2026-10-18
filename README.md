@@ -35,7 +35,7 @@ docker compose up --build
 | API docs | http://localhost:8000/docs |
 | Postgres | `localhost:5432` |
 
-The page should show a sample **Pay bill** call and **Backend health: ok (database: connected)**.
+The page should show **Stepping Stones** and **Backend health: ok (database: connected)**.
 
 If port 8000 or 5432 is already taken, copy `.env.example` to `.env` and set `BACKEND_PORT` or `POSTGRES_PORT`. Details are in [docs/SETUP.md](docs/SETUP.md).
 
@@ -43,7 +43,7 @@ If port 8000 or 5432 is already taken, copy `.env.example` to `.env` and set `BA
 
 ```
 backend/             FastAPI app (health check today)
-frontend/            React app (one sample call today)
+frontend/            React app (health check today)
 docs/SETUP.md        How to run it, and port conflicts
 docker-compose.yml   Postgres + API + UI
 ```
