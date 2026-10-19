@@ -96,16 +96,13 @@ _Replace this list with your version._
 
 ## How we work
 
-**Suggested owner:** [Someone write this] 
+**Owner:** Ozan
 
-**How to fill this in:** the practical rules, in a short list.
-
-- Branch names, and how a pull request names the issue it closes.
-- One reviewer per pull request.
-- How a ticket on the board moves (Backlog → Ready → In progress → In review → Done).
-- Where the team asks questions.
-
-_Replace this list with your version._
+- **Branches:** `type/issue-number-short-name`, for example `feat/22-app-shell` or `docs/readme-dataset`. Types: `feat`, `fix`, `docs`, `chore`.
+- **Pull requests:** one issue per PR. Put `Closes #<issue number>` in the description so the issue closes when the PR merges. For a page, add a screenshot next to its Figma frame.
+- **Reviews:** at least one teammate approves every PR before it merges. Nobody merges their own PR without a review.
+- **Board:** a ticket moves Backlog → Ready → In progress → In review → Done. Move it to In progress when you start, In review when the PR is open, and Done when it merges.
+- **Questions:** ask in the team group chat. If it's about a specific ticket, comment on the issue so the answer stays with the work.
 
 ---
 
