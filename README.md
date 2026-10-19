@@ -63,11 +63,9 @@ Four sections below are blank on purpose. Each one has a suggested owner. Claim 
 
 ## What it is
 
-**Suggested owner:** [Someone write this] 
+**Suggested owner:** Anton 
 
-**How to fill this in:** 3–5 sentences. Say that feedback today is late, vague, and based on a small sample of calls. Say that a polite call, even one the customer rates 10/10, can still skip required steps. Say who it helps (new hires, current agents, coaches) and where it fits (after the transcript exists, before the next shift, not live during the call).
-
-_Replace this paragraph with that write-up._
+Stepping Stones is a post-call coaching tool for contact-centre agents. Feedback today usually comes late, is vague, and is based on only a small sample of calls, so agents rarely learn exactly what to change. A polite call, even one the customer rates 10/10, can still skip required steps, so customer scores alone don’t show whether an agent followed the process. Stepping Stones checks each call’s transcript against a template for its task type and shows which required steps the agent completed, which they missed, and an overall score. It helps new hires learn the process, current agents see their progress over time, and coaches focus on specific gaps. It runs after the transcript exists and before the agent’s next shift, not live during the call.
 
 ## Features
 
