@@ -69,15 +69,24 @@ Stepping Stones is a post-call coaching tool for contact-centre agents. Feedback
 
 ## Features
 
-**Suggested owner:** [Someone write this]
+**Owner:** Diego
 
-**How to fill this in:** a short list, one line each, for the first version and for later.
+**First version**
 
-- First version: templates for 1–3 task types, a post-call summary (completed, missed, flags, score), progress over time, and calls loaded from HarperValleyBank.
-- Later: a peer example for a missed step, weighted steps, branching calls, and better detection.
-- Add one worked score. The replace-card example is 3 of 4 steps = 75%, because the agent never said the card was ordered.
+- **Templates:** an ordered list of required steps for 1–3 HarperValleyBank task types, starting with Transfer money and Replace card.
+- **Post-call review:** for one call, which required steps the agent completed, which they missed, a flag for each missed step, and a score.
+- **Procedures:** the steps each task type expects, so agents can check them before their next call.
+- **Progress:** an agent's step-completion rate week over week, and the steps they skip most.
+- **Calls:** loaded from the HarperValleyBank transcripts.
 
-_Replace this list with your version._
+**Later**
+
+- A peer example for a missed step, taken from another call where the step was done.
+- Weighted steps, so missing a key step costs more than missing a courtesy step.
+- Branching calls, where the required steps depend on what the caller asks for.
+- Better detection of whether a step was done.
+
+**Worked score.** The score is the number of required steps completed divided by the number of required steps. In the replace-card example, the agent greets the caller, collects the card type and closes the call, but never says the new card was ordered. That is 3 of 4 steps, so the score is 75%, in the Getting there band (60–84).
 
 ## Dataset
 
@@ -111,7 +120,7 @@ Add your focus on the same pull request as your section.
 | Name | Focus | GitHub |
 | --- | --- | --- |
 | Brandon | TBA| [@brandonli5211](https://github.com/brandonli5211) |
-| Diego | TBA | [@DiegoFigarella](https://github.com/DiegoFigarella) |
+| Diego | Frontend: Procedures | [@DiegoFigarella](https://github.com/DiegoFigarella) |
 | Ozan | TBA | [@ozantimur](https://github.com/ozantimur) |
 | Anton | TBA | [@thlasagna](https://github.com/thlasagna) |
 | Tugra | TBA | [@TroubleVaser](https://github.com/TroubleVaser) |
