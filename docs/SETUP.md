@@ -19,6 +19,26 @@ The first build takes a few minutes. When it settles:
 The frontend page should show **Backend health: ok (database: connected)**.
 If it does, all three services are talking to each other.
 
+Compose starts the API with `uv run serve`. The frontend still installs and starts with npm. There is no uv command for `frontend/`.
+
+To install the locked backend on the host, from `backend/`:
+
+```bash
+uv sync
+```
+
+That installs the versions in `backend/uv.lock`. `uv sync --frozen` exits non-zero when the lock is missing or does not match `backend/pyproject.toml`.
+
+PostgreSQL 18 uses a new volume, `pg18`, mounted at `/var/lib/postgresql`. The previous `pgdata` volume is left in place and is not attached. `uv run migrate` must not delete that old volume.
+
+From `backend/`, with `DATABASE_URL` aimed at that PostgreSQL 18 database:
+
+```bash
+uv run migrate
+```
+
+The first run creates `app_meta`. The second run exits 0 and does not change the schema. The command does not drop existing data, and it does not start the API.
+
 Code changes in `backend/` and `frontend/` reload automatically.
 
 ## Handy commands
@@ -27,7 +47,7 @@ Code changes in `backend/` and `frontend/` reload automatically.
 docker compose up -d --build     # run in the background
 docker compose logs -f backend   # follow one service's logs
 docker compose down              # stop everything
-docker compose down -v           # stop and wipe the database
+docker compose down -v           # manual wipe of volumes, not the schema step
 ```
 
 ## Troubleshooting

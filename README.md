@@ -14,8 +14,9 @@ The app runs as **React → FastAPI → PostgreSQL**. That replaces the first pr
 | --- | --- | --- |
 | React + Vite | The agent screen, at http://localhost:5173 | The UI stays a client. It shows the result. It does not decide if a step was completed. |
 | FastAPI | The API, at http://localhost:8000/docs | Loading calls, checking steps, scoring, and the API are all Python. `/docs` lists every endpoint. |
-| PostgreSQL 16 | The database | A transcript is one nested document. Progress questions are filters: this agent, this task type, this step. SQL does both. Postgres can still store loose JSON. |
-| Docker Compose | Starts all three | One command for local development. |
+| PostgreSQL 18 | The database | A transcript is one nested document. Progress questions are filters: this agent, this task type, this step. SQL does both. Postgres can still store loose JSON. |
+| uv | The only Python installer | Backend dependencies install from `backend/uv.lock`. The frontend still installs with npm. |
+| Docker Compose | Starts all three | One command for local development. The API process is `uv run serve`. |
 
 Python was chosen over a second Java service because the product is a checker. The rubric and the service that explains it should be the same code.
 
@@ -36,6 +37,24 @@ docker compose up --build
 | Postgres | `localhost:5432` |
 
 The page should show **Stepping Stones** and **Backend health: ok (database: connected)**.
+
+Compose starts the API with `uv run serve`. The frontend service still installs and starts with npm.
+
+To install the same locked backend outside Compose, from `backend/`:
+
+```bash
+uv sync
+```
+
+`uv sync` installs `backend/uv.lock`. `uv sync --frozen` exits non-zero when that lock is missing or no longer matches `backend/pyproject.toml`.
+
+To create the starting schema, from `backend/` with `DATABASE_URL` aimed at PostgreSQL 18:
+
+```bash
+uv run migrate
+```
+
+The first run creates `app_meta`. The second run exits 0 and does not change the schema. The command does not drop existing data, and it does not start the API.
 
 If port 8000 or 5432 is already taken, copy `.env.example` to `.env` and set `BACKEND_PORT` or `POSTGRES_PORT`. Details are in [docs/SETUP.md](docs/SETUP.md).
 
