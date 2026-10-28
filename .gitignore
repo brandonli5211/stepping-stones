@@ -8,4 +8,13 @@ node_modules/
 dist/
 .vite/
 .DS_Store
+
+# Spec Kit / feature specs — local agent workflow, not app code
 specs/
+.specify/
+
+# Cursor — skills, rules, and agent config
+.cursor/
+
+# IDE
+.idea/

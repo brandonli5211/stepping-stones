@@ -20,9 +20,17 @@ The app runs as **React → FastAPI → PostgreSQL**. That replaces the first pr
 
 Python was chosen over a second Java service because the product is a checker. The rubric and the service that explains it should be the same code.
 
-## Getting started
+## Setup and run
 
-You need [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+### Prerequisites
+
+| Tool | Needed for | Install |
+| --- | --- | --- |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2) | Running the full stack | Required |
+| [uv](https://docs.astral.sh/uv/) 0.11.32 | Backend install, migrate, and tests on the host | Optional if you only use Compose |
+| Node.js 20+ / npm | Frontend install outside Compose | Optional if you only use Compose |
+
+### Run the stack (recommended)
 
 ```bash
 git clone https://github.com/brandonli5211/stepping-stones.git
@@ -30,33 +38,61 @@ cd stepping-stones
 docker compose up --build
 ```
 
+The first build takes a few minutes. Compose brings up PostgreSQL 18, starts the API with `uv run serve`, and starts the React app with npm.
+
 | Service | URL |
 | --- | --- |
 | App | http://localhost:5173 |
 | API docs | http://localhost:8000/docs |
 | Postgres | `localhost:5432` |
 
-The page should show **Stepping Stones** and **Backend health: ok (database: connected)**.
+Open the app. You should see **Stepping Stones** and **Backend health: ok (database: connected)**.
 
-Compose starts the API with `uv run serve`. The frontend service still installs and starts with npm.
-
-To install the same locked backend outside Compose, from `backend/`:
+Handy Compose commands:
 
 ```bash
-uv sync
+docker compose up -d --build     # background
+docker compose logs -f backend   # follow API logs
+docker compose down              # stop
 ```
-
-`uv sync` installs `backend/uv.lock`. `uv sync --frozen` exits non-zero when that lock is missing or no longer matches `backend/pyproject.toml`.
-
-To create the starting schema, from `backend/` with `DATABASE_URL` aimed at PostgreSQL 18:
-
-```bash
-uv run migrate
-```
-
-The first run creates `app_meta`. The second run exits 0 and does not change the schema. The command does not drop existing data, and it does not start the API.
 
 If port 8000 or 5432 is already taken, copy `.env.example` to `.env` and set `BACKEND_PORT` or `POSTGRES_PORT`. Details are in [docs/SETUP.md](docs/SETUP.md).
+
+### Backend on the host (optional)
+
+Use this when you want to install, migrate, or test the API without going through the frontend container. From `backend/`:
+
+```bash
+uv sync                  # install from backend/uv.lock
+uv run migrate           # apply starting schema (creates app_meta)
+uv run serve             # API on http://localhost:8000
+uv run test              # backend tests
+```
+
+`uv sync` installs the locked set in `backend/uv.lock`. `uv sync --frozen` exits non-zero when that lock is missing or no longer matches `backend/pyproject.toml`.
+
+Point `DATABASE_URL` at PostgreSQL 18 before `uv run migrate`. The first migrate creates `app_meta`; a second run exits 0 and does not change the schema. Migrate does not drop data and does not start the API.
+
+A quick path that starts only the database in Docker, then migrates from the host:
+
+```bash
+docker compose up -d db
+cd backend
+export DATABASE_URL=postgresql+psycopg://stepping:stepping@localhost:5432/stepping_stones
+uv sync
+uv run migrate
+uv run serve
+```
+
+### Frontend on the host (optional)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Set `VITE_API_URL` to the API base URL if it is not `http://localhost:8000`. The frontend stays on npm; there is no uv command for `frontend/`.
 
 ## Project structure
 
