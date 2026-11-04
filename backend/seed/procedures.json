@@ -1,0 +1,53 @@
+{
+  "transfer money": [
+    {"id": "greet", "name": "Greet and open", "points": 5, "example": "Thank you for calling Harper Valley Bank, my name is ... How can I help you today?", "logs": []},
+    {"id": "amount", "name": "Collect transfer amount", "points": 10, "example": "What is the transfer amount?", "logs": ["transfer amount"]},
+    {"id": "source", "name": "Collect source account", "points": 10, "example": "Which account is it coming from?", "logs": ["transfer source account"]},
+    {"id": "destination", "name": "Collect destination account", "points": 10, "example": "And which account is it going to?", "logs": ["transfer destination account"]},
+    {"id": "submit", "name": "Submit and confirm transfer", "points": 55, "example": "So that's $114 from your checking to your savings, is that right?", "logs": [],
+     "checks": [{"id": "logged_matches", "name": "Logged values match what the caller asked", "points": 40},
+                {"id": "read_back", "name": "Read back amount and both accounts", "points": 15}]},
+    {"id": "offer_help", "name": "Offer further help", "points": 5, "example": "Is there anything else I can help you with?", "logs": []},
+    {"id": "close", "name": "Close", "points": 5, "example": "Thank you for calling, have a great day.", "logs": []}
+  ],
+  "replace card": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "card_type", "name": "Collect card type", "points": 30, "example": "Was that a debit or credit card?", "logs": ["replacement card type"]},
+    {"id": "confirm_ordered", "name": "Confirm ordered", "points": 50, "example": "Your replacement card has been ordered and is on its way.", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ],
+  "check balance": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "account_type", "name": "Collect account type", "points": 30, "example": "Is that your checking or savings account?", "logs": ["balance check account type"]},
+    {"id": "tell_balance", "name": "Tell the balance", "points": 60, "example": "Your checking balance is ...", "logs": []}
+  ],
+  "get branch hours": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "tell_hours", "name": "Tell the hours", "points": 80, "example": "We are open from ... to ...", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ],
+  "order checks": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "home_address", "name": "Collect home address", "points": 30, "example": "What address should we send them to?", "logs": ["home address"]},
+    {"id": "confirm_ordered", "name": "Confirm ordered", "points": 50, "example": "Your checks have been ordered.", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ],
+  "pay bill": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "payee_amount", "name": "Collect payee and amount", "points": 30, "example": "Who is the bill to, and what is the amount?", "logs": ["company name", "company address", "money amount"]},
+    {"id": "confirm_payment", "name": "Confirm payment", "points": 50, "example": "Your payment of ... to ... has been sent.", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ],
+  "reset password": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "phone_number", "name": "Collect phone number", "points": 30, "example": "What is the phone number on the account?", "logs": ["phone", "password dest"]},
+    {"id": "confirm_reset", "name": "Confirm reset sent", "points": 50, "example": "I've sent you a reset link.", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ],
+  "schedule appointment": [
+    {"id": "greet", "name": "Greet", "points": 10, "example": "Thank you for calling Harper Valley Bank.", "logs": []},
+    {"id": "day_time", "name": "Collect day and time", "points": 30, "example": "What day and time works for you?", "logs": ["day", "time"]},
+    {"id": "confirm_booked", "name": "Confirm booked", "points": 50, "example": "You're booked for ... at ....", "logs": []},
+    {"id": "close", "name": "Close", "points": 10, "example": "Is there anything else I can help you with today?", "logs": []}
+  ]
+}
