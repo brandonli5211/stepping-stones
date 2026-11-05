@@ -1,0 +1,13 @@
+{
+  "a2f086d27b3a4f96": [
+    {"start_ms": 2300,  "step_id": "greet",       "kind": "evidence", "text": "Evidence for Greet and open"},
+    {"start_ms": 21070, "step_id": "amount",      "kind": "evidence", "text": "Evidence for Collect transfer amount"},
+    {"start_ms": 26190, "step_id": "amount",      "kind": "evidence", "text": "Evidence for Collect transfer amount"},
+    {"start_ms": 26190, "step_id": "source",      "kind": "evidence", "text": "Evidence for Collect source account"},
+    {"start_ms": 26190, "step_id": "destination", "kind": "evidence", "text": "Evidence for Collect destination account"},
+    {"start_ms": 33530, "step_id": "submit",      "kind": "wrong",    "text": "Wrong: read back reversed. The caller asked checking → savings", "quote": true},
+    {"start_ms": 44540, "step_id": "submit",      "kind": "wrong",    "text": "Wrong: transferred savings → checking"},
+    {"start_ms": 44540, "step_id": "offer_help",  "kind": "evidence", "text": "Evidence for Offer further help"},
+    {"start_ms": 57200, "step_id": "close",       "kind": "evidence", "text": "Evidence for Close"}
+  ]
+}
