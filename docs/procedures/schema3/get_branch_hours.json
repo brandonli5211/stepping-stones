@@ -1,0 +1,103 @@
+{
+  "schema_version": 3,
+  "call_type": "get_branch_hours",
+  "name": "Get branch hours",
+  "version": 1,
+  "description": "The caller asks when the branch is open. The hours the agent states are recorded but not scored.",
+  "total_points": 100,
+  "gate": {
+    "question": "Is this a branch-hours call: does the caller want to know when the bank branch is open?"
+  },
+  "logged_task_type": {
+    "metadata_key": "task_type",
+    "expected": "get_branch_hours",
+    "expected_raw": "get branch hours"
+  },
+  "fields": [
+    {
+      "key": "branch_hours",
+      "metadata_key": "branch hours",
+      "type": "text",
+      "role": "told_to_caller",
+      "reference": "none",
+      "model_reports": [
+        "agent_read_back"
+      ],
+      "model_hint": "The opening hours the AGENT tells the caller, as spoken (for example 9:30 am to 5 pm). Reported for information only; it is not scored."
+    }
+  ],
+  "steps": [
+    {
+      "key": "greet_and_open",
+      "name": "Greet and open",
+      "description": "State the bank name and your own name, then ask how you can help.",
+      "points": 5,
+      "example_phrase": "Hello, this is Harper Valley National Bank, my name is Jennifer. How can I help you today?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent names the bank and gives their own name, then asks how they can help."
+    },
+    {
+      "key": "state_branch_hours",
+      "name": "State branch hours",
+      "description": "Tell the caller when the branch is open. Whether the hours are correct is not scored.",
+      "points": 85,
+      "example_phrase": "Our branch is open from nine thirty a m to five p m.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent tells the caller the branch opening hours (any hours; correctness is not checked)."
+    },
+    {
+      "key": "offer_further_help",
+      "name": "Offer further help",
+      "description": "Ask whether the caller needs anything else.",
+      "points": 5,
+      "example_phrase": "Is there anything else I can help you with?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent asks whether the caller needs anything else."
+    },
+    {
+      "key": "close",
+      "name": "Close",
+      "description": "Thank the caller and end the call.",
+      "points": 5,
+      "example_phrase": "Thank you for calling, you have a great day.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent thanks the caller or says goodbye before the call ends."
+    }
+  ],
+  "model_output_example": {
+    "is_expected_call": {
+      "value": true,
+      "turn": 0,
+      "quote": "exact words copied from that turn"
+    },
+    "steps": {
+      "greet_and_open": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "state_branch_hours": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "offer_further_help": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "close": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "agent_read_back": {
+      "branch_hours": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    }
+  }
+}

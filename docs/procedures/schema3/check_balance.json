@@ -1,0 +1,174 @@
+{
+  "schema_version": 3,
+  "call_type": "check_balance",
+  "name": "Check balance",
+  "version": 1,
+  "description": "The caller asks for the balance of one of their accounts (checking or savings).",
+  "total_points": 100,
+  "gate": {
+    "question": "Is this a balance-check call: does the caller want to know the balance of one of their accounts?"
+  },
+  "logged_task_type": {
+    "metadata_key": "task_type",
+    "expected": "check_balance",
+    "expected_raw": "check balance"
+  },
+  "fields": [
+    {
+      "key": "balance_check_account_type",
+      "metadata_key": "balance check account type",
+      "type": "account",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request"
+      ],
+      "model_hint": "The account whose balance the caller wants."
+    },
+    {
+      "key": "account_balance",
+      "metadata_key": "account balance",
+      "type": "amount",
+      "role": "told_to_caller",
+      "reference": "system_record",
+      "model_reports": [
+        "agent_read_back"
+      ],
+      "model_hint": "The balance the AGENT tells the caller, as a number.",
+      "system_record": {
+        "dataset_metadata_key": "account balance",
+        "note": "In HarperValleyBank this is tasks['account balance'] (the agent states it in 181 of 203 calls). In production use the bank's own system. Never show it to the model."
+      }
+    }
+  ],
+  "steps": [
+    {
+      "key": "greet_and_open",
+      "name": "Greet and open",
+      "description": "State the bank name and your own name, then ask how you can help.",
+      "points": 5,
+      "example_phrase": "Hello, this is Harper Valley National Bank, my name is Jennifer. How can I help you today?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent names the bank and gives their own name, then asks how they can help."
+    },
+    {
+      "key": "get_account_type",
+      "name": "Get account type",
+      "description": "Get which account the caller wants to check (checking or savings), by asking or by confirming.",
+      "points": 10,
+      "example_phrase": "Which account would you like to check?",
+      "logs": [
+        "balance_check_account_type"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the account type from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "log_balance_check",
+      "name": "Log the balance check",
+      "description": "Log the task type and the account the caller asked about.",
+      "points": 25,
+      "example_phrase": "(done in the system)",
+      "logs": [
+        "balance_check_account_type"
+      ],
+      "sub_checks": [
+        {
+          "key": "logged_task_type",
+          "description": "The agent logged the task type 'check balance'",
+          "points": 5,
+          "type": "logged_task_type",
+          "expected": "check_balance"
+        },
+        {
+          "key": "logged_account_type",
+          "description": "The logged account type matches what the caller asked",
+          "points": 20,
+          "type": "logged_matches_request",
+          "fields": [
+            "balance_check_account_type"
+          ]
+        }
+      ],
+      "done_when": "The agent logged the right task type and account type."
+    },
+    {
+      "key": "state_account_balance",
+      "name": "State account balance",
+      "description": "Tell the caller the correct balance of the account they asked about.",
+      "points": 50,
+      "example_phrase": "Your savings account balance is $78.",
+      "logs": [],
+      "sub_checks": [
+        {
+          "key": "balance_stated_correctly",
+          "description": "The balance the agent stated matches the bank's record",
+          "points": 50,
+          "type": "stated_matches_system_record",
+          "field": "account_balance"
+        }
+      ],
+      "done_when": "The agent states the balance, and it equals the bank's record."
+    },
+    {
+      "key": "offer_further_help",
+      "name": "Offer further help",
+      "description": "Ask whether the caller needs anything else.",
+      "points": 5,
+      "example_phrase": "Is there anything else I can help you with?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent asks whether the caller needs anything else."
+    },
+    {
+      "key": "close",
+      "name": "Close",
+      "description": "Thank the caller and end the call.",
+      "points": 5,
+      "example_phrase": "Thank you for calling, you have a great day.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent thanks the caller or says goodbye before the call ends."
+    }
+  ],
+  "model_output_example": {
+    "is_expected_call": {
+      "value": true,
+      "turn": 0,
+      "quote": "exact words copied from that turn"
+    },
+    "steps": {
+      "greet_and_open": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "get_account_type": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "offer_further_help": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "close": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "caller_request": {
+      "balance_check_account_type": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "agent_read_back": {
+      "account_balance": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    }
+  }
+}

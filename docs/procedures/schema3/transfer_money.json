@@ -1,0 +1,249 @@
+{
+  "schema_version": 3,
+  "call_type": "transfer_money",
+  "name": "Transfer money",
+  "version": 3,
+  "description": "The caller moves money between two of their own accounts (checking and savings).",
+  "total_points": 100,
+  "gate": {
+    "question": "Is this a money-transfer call: does the caller want to move money between their own accounts?"
+  },
+  "logged_task_type": {
+    "metadata_key": "task_type",
+    "expected": "transfer_money",
+    "expected_raw": "transfer money"
+  },
+  "fields": [
+    {
+      "key": "transfer_amount",
+      "metadata_key": "transfer amount",
+      "type": "amount",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request",
+        "agent_read_back"
+      ],
+      "model_hint": "The amount to move."
+    },
+    {
+      "key": "transfer_source_account",
+      "metadata_key": "transfer source account",
+      "type": "account",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request",
+        "agent_read_back"
+      ],
+      "model_hint": "The account the money comes FROM."
+    },
+    {
+      "key": "transfer_destination_account",
+      "metadata_key": "transfer destination account",
+      "type": "account",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request",
+        "agent_read_back"
+      ],
+      "model_hint": "The account the money goes TO."
+    }
+  ],
+  "steps": [
+    {
+      "key": "greet_and_open",
+      "name": "Greet and open",
+      "description": "State the bank name and your own name, then ask how you can help.",
+      "points": 5,
+      "example_phrase": "Hello, this is Harper Valley National Bank, my name is Jennifer. How can I help you today?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent names the bank and gives their own name, then asks how they can help."
+    },
+    {
+      "key": "collect_transfer_amount",
+      "name": "Collect transfer amount",
+      "description": "Get the amount the caller wants to transfer, by asking or by confirming what the caller said.",
+      "points": 10,
+      "example_phrase": "Okay, and what is the transfer amount?",
+      "logs": [
+        "transfer_amount"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the amount from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "collect_source_account",
+      "name": "Collect source account",
+      "description": "Get the account the money comes from (checking or savings), by asking or by confirming.",
+      "points": 10,
+      "example_phrase": "And what is the source account?",
+      "logs": [
+        "transfer_source_account"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the source account from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "collect_destination_account",
+      "name": "Collect destination account",
+      "description": "Get the account the money goes to (checking or savings), by asking or by confirming.",
+      "points": 10,
+      "example_phrase": "Okay, and the destination account?",
+      "logs": [
+        "transfer_destination_account"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the destination account from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "submit_and_confirm_transfer",
+      "name": "Submit and confirm transfer",
+      "description": "Log the transfer correctly, then read back the amount, source and destination to confirm it is done.",
+      "points": 55,
+      "example_phrase": "Perfect, so $79 has been transferred from your savings account to your checking account.",
+      "logs": [
+        "transfer_amount",
+        "transfer_source_account",
+        "transfer_destination_account"
+      ],
+      "sub_checks": [
+        {
+          "key": "logged_task_type",
+          "description": "The agent logged the task type 'transfer money'",
+          "points": 5,
+          "type": "logged_task_type",
+          "expected": "transfer_money"
+        },
+        {
+          "key": "logged_matches_request",
+          "description": "What was logged matches what the caller asked",
+          "points": 35,
+          "type": "logged_matches_request",
+          "fields": [
+            "transfer_amount",
+            "transfer_source_account",
+            "transfer_destination_account"
+          ]
+        },
+        {
+          "key": "read_back_amount",
+          "description": "Amount read back to the caller",
+          "points": 5,
+          "type": "read_back_matches_request",
+          "fields": [
+            "transfer_amount"
+          ]
+        },
+        {
+          "key": "read_back_source",
+          "description": "Source account read back to the caller",
+          "points": 5,
+          "type": "read_back_matches_request",
+          "fields": [
+            "transfer_source_account"
+          ]
+        },
+        {
+          "key": "read_back_destination",
+          "description": "Destination account read back to the caller",
+          "points": 5,
+          "type": "read_back_matches_request",
+          "fields": [
+            "transfer_destination_account"
+          ]
+        }
+      ],
+      "done_when": "The agent logged the right task type and values, and read all three back to the caller correctly."
+    },
+    {
+      "key": "offer_further_help",
+      "name": "Offer further help",
+      "description": "Ask whether the caller needs anything else.",
+      "points": 5,
+      "example_phrase": "Is there anything else I can help you with?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent asks whether the caller needs anything else."
+    },
+    {
+      "key": "close",
+      "name": "Close",
+      "description": "Thank the caller and end the call.",
+      "points": 5,
+      "example_phrase": "Thank you for calling, you have a great day.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent thanks the caller or says goodbye before the call ends."
+    }
+  ],
+  "model_output_example": {
+    "is_expected_call": {
+      "value": true,
+      "turn": 0,
+      "quote": "exact words copied from that turn"
+    },
+    "steps": {
+      "greet_and_open": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "collect_transfer_amount": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "collect_source_account": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "collect_destination_account": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "offer_further_help": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "close": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "caller_request": {
+      "transfer_amount": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "transfer_source_account": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "transfer_destination_account": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "agent_read_back": {
+      "transfer_amount": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "transfer_source_account": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "transfer_destination_account": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    }
+  }
+}
