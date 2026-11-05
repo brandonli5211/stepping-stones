@@ -39,6 +39,8 @@ services:
     command: npm run dev -- --host 0.0.0.0 --port 5173
     environment:
       VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
+      # true = screens use example responses from frontend/src/api/sampleData.js
+      VITE_SAMPLE_DATA: ${VITE_SAMPLE_DATA:-false}
     ports:
       - "5173:5173"
     volumes:

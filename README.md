@@ -46,7 +46,7 @@ The first build takes a few minutes. Compose brings up PostgreSQL 18, starts the
 | API docs | http://localhost:8000/docs |
 | Postgres | `localhost:5432` |
 
-Open the app. You should see **Stepping Stones** and **Backend health: ok (database: connected)**.
+Open the app. You should see the **Your calls** page. Check the API and database at http://localhost:8000/api/health, which should return `{"status":"ok","database":"connected"}`.
 
 Handy Compose commands:
 
@@ -93,6 +93,8 @@ npm run dev
 ```
 
 Set `VITE_API_URL` to the API base URL if it is not `http://localhost:8000`. The frontend stays on npm; there is no uv command for `frontend/`.
+
+Set `VITE_SAMPLE_DATA=true` (in `.env` for Compose, or in your shell) to have every screen use the example responses in `frontend/src/api/sampleData.js` instead of the API. Use it to build a screen before its endpoint exists.
 
 ## Project structure
 
