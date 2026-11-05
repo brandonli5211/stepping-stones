@@ -1,0 +1,121 @@
+/* Design tokens from the Figma file "Stepping Stones — UI Mockup". */
+:root {
+  --brand: #3f7c87;
+  --brand-dark: #2f6570;
+  --brand-soft: #dceaec;
+  --page: #f3fbf5;
+  --card: #ffffff;
+  --border: #e3ece8;
+  --text: #1b2224;
+  --text-muted: #5b6668;
+  --completed: #22c768;
+  --completed-edge: #17a453;
+  --missed: #fde4e4;
+  --missed-edge: #e05b5b;
+  --wrong: #e25555;
+  --wrong-edge: #b83434;
+  --review: #eef1f0;
+  --review-edge: #9aa4a3;
+  --danger: #c62828;
+  --danger-bg: #fdecec;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(23, 46, 52, 0.04), 0 4px 16px rgba(23, 46, 52, 0.05);
+  font-family: "Figtree", system-ui, sans-serif;
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, select { font: inherit; color: inherit; }
+.muted { color: var(--text-muted); }
+.small { font-size: 0.75rem; }
+.danger { color: var(--danger); font-weight: 500; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.stack { display: flex; flex-direction: column; gap: 24px; }
+
+/* Shell */
+.shell { display: flex; min-height: 100vh; }
+.main { flex: 1; min-width: 0; max-width: 1200px; padding: 40px 48px; }
+.sidebar {
+  position: sticky; top: 0; display: flex; flex-direction: column; gap: 40px;
+  width: 256px; height: 100vh; padding: 32px 16px; background: var(--brand); color: #fff;
+}
+.logo { display: flex; flex-direction: column; gap: 12px; padding: 0 12px; font-size: 1.75rem; font-weight: 600; line-height: 1.1; }
+.logo svg { fill: currentColor; }
+.sidebar nav { display: flex; flex-direction: column; gap: 4px; }
+.sidebar__link { padding: 12px; border-radius: 8px; font-size: 0.875rem; color: rgba(255, 255, 255, 0.82); }
+.sidebar__link:hover, .sidebar__link.is-active { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.sidebar__user { display: flex; flex-direction: column; margin-top: auto; padding: 0 12px; font-size: 0.875rem; }
+.sidebar__user span { font-size: 0.75rem; opacity: 0.82; }
+
+/* Page header */
+.page-header { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 24px; }
+.page-header h1 { display: flex; align-items: center; gap: 12px; font-size: 2.5rem; font-weight: 600; letter-spacing: -0.02em; }
+.page-header .button { margin-bottom: 12px; }
+
+/* Card, empty state, buttons */
+.card { padding: 24px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card__title { margin-bottom: 16px; font-size: 1rem; font-weight: 600; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; align-items: start; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 24px; text-align: center; }
+.button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid transparent;
+  border-radius: 8px; background: var(--brand-soft); font-size: 0.875rem; font-weight: 500; cursor: pointer;
+}
+.button--outline { background: var(--card); border-color: var(--border); }
+.button--outline.is-active { background: var(--brand-soft); border-color: var(--brand); }
+.button--pill { padding: 4px 12px; border-radius: 999px; background: var(--card); border-color: var(--border); font-size: 0.75rem; }
+.button select { border: 0; background: transparent; cursor: pointer; }
+
+/* Stones: one shape, coloured per status */
+.stone { display: inline-flex; align-items: center; gap: 8px; --face: var(--review); --edge: transparent; --line: none; }
+.stone svg { overflow: visible; }
+.stone__edge { fill: var(--edge); }
+.stone__face { fill: var(--face); }
+.stone__detail { stroke: var(--line); stroke-width: 1.6; stroke-linecap: round; }
+.stone__label { font-size: 0.75rem; color: var(--text-muted); }
+.stone--completed { --face: var(--completed); --edge: var(--completed-edge); }
+.stone--missed { --face: var(--missed); --line: var(--missed-edge); }
+.stone--missed .stone__face { stroke: var(--missed-edge); stroke-width: 1.2; }
+.stone--wrong { --face: var(--wrong); --edge: var(--wrong-edge); --line: #fff; }
+.stone--review .stone__face { stroke: var(--review-edge); stroke-width: 1.2; stroke-dasharray: 2.4 2; }
+.stone--procedure { --face: var(--brand); --edge: var(--brand-dark); }
+.legend { gap: 8px 20px; }
+
+/* Score ring and summary */
+.ring { position: relative; display: inline-grid; place-items: center; flex-shrink: 0; font-weight: 700; --arc: var(--brand); }
+.ring svg { position: absolute; inset: 0; }
+.ring circle { fill: none; }
+.ring__track { stroke: var(--brand-soft); }
+.ring__arc { stroke: var(--arc); stroke-linecap: round; }
+.ring--good { --arc: var(--completed); }
+.ring--bad { --arc: var(--wrong); }
+.summary { display: flex; align-items: center; gap: 24px; }
+.summary__headline { font-size: 1.25rem; font-weight: 600; }
+.summary__action { margin-left: auto; }
+
+/* My calls table */
+.toolbar .legend { margin-left: auto; }
+.table-card { padding: 0; overflow-x: auto; }
+.table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.875rem; white-space: nowrap; }
+.table th { padding: 20px 16px 12px; font-size: 0.75rem; font-weight: 400; color: var(--text-muted); text-align: left; }
+.table td { padding: 12px 16px; }
+.table th:first-child, .table td:first-child { padding-left: 24px; }
+.table b { display: block; font-weight: 500; }
+.table small { display: block; color: var(--text-muted); }
+.table a:hover b { text-decoration: underline; }
+
+/* Call detail and step lists */
+.detail-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+.steps { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; font-size: 0.875rem; }
+.steps__item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid transparent; border-radius: 12px; }
+.steps__item--missed, .steps__item--wrong { border-color: var(--missed-edge); background: var(--danger-bg); }
+
+@media (max-width: 860px) {
+  .shell, .detail-grid { display: flex; flex-direction: column; }
+  .sidebar { position: static; flex-direction: row; flex-wrap: wrap; width: 100%; height: auto; padding: 16px; }
+  .main { padding: 24px 16px; }
+}
