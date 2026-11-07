@@ -135,21 +135,53 @@ because the current database has no application tables and the feature
 does not promise an in-place major upgrade. `docker compose down -v` as
 a required step. Rejected because that deletes the old volume.
 
+## Decision: Clean Architecture layers for this feature
+
+**Decision**: Backend source for this feature is split by dependency
+direction:
+
+| Layer | Responsibility | May import |
+| --- | --- | --- |
+| `app/domain/` | `AppMeta` entity and its key/value rules | nothing from FastAPI, SQLAlchemy, Alembic, or HTTP |
+| `app/application/` | `CheckHealth` use case and ports such as `DatabaseProbe` | domain only, plus typing/stdlib |
+| `app/adapters/` | SQLAlchemy model/engine/probe; FastAPI health route | application and domain |
+| `app/infrastructure/` and `alembic/` | `serve` / `migrate` / `test` wrappers; Alembic env | adapters and frameworks as needed |
+| `app/main.py` | Compose the FastAPI app and wire adapters into use cases | adapters and application |
+
+The health HTTP handler does not run `SELECT 1` itself. It calls
+`CheckHealth`, which depends on a `DatabaseProbe` port. The SQLAlchemy
+probe is the adapter. The ORM `AppMeta` table mapping is not the domain
+entity; validation rules for key/value live on the domain type.
+
+**Rationale**: Constitution Principle VII requires inward dependencies.
+This feature's behavior is small, but the layout must be correct so later
+coaching features do not inherit a flat "everything in `app/`" pattern.
+
+**Alternatives considered**: Keep a flat `app/main.py`, `app/db.py`,
+`app/models.py`. Rejected because domain rules and route wiring would
+share one module tree and gate VII would fail. Hexagonal naming only
+(`ports`/`adapters` without a domain package). Rejected because the
+constitution names domain entities and use cases explicitly.
+
 ## Decision: Tests call each new function without a second database
 
 **Decision**: pytest is a backend dev dependency, run only through
 `uv run test`. Unit tests call `serve`, `migrate`, and `test` and assert
 the process each one launches, using a fake process runner. A test calls
 the migration in Alembic's offline SQL mode and asserts the output
-contains `CREATE TABLE app_meta`. The health function, once it is async,
-is called with a fake session and must still report the database as
-connected. Tests do not use SQLite or another database product.
+contains `CREATE TABLE app_meta`. Domain tests construct `AppMeta` and
+assert validation. Application tests call `CheckHealth` with a fake
+`DatabaseProbe`. The FastAPI health route test asserts it delegates and
+returns the contract body. Tests do not use SQLite or another database
+product.
 
 **Rationale**: Every new or changed function needs a test that calls it.
+Layered tests keep domain and use-case checks free of the framework.
 Offline SQL proves the revision creates the table without standing up a
 second kind of database. Live PostgreSQL remains the quickstart check.
 
 **Alternatives considered**: pytest-alembic against a disposable
 PostgreSQL. Useful later, heavier than this feature needs, and not
 required to prove the revision's SQL. No tests for the thin command
-wrappers. Rejected by the unit-test rule.
+wrappers. Rejected by the unit-test rule. Only route-level health tests.
+Rejected because that would leave the use case untested in isolation.

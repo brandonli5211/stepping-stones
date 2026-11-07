@@ -15,7 +15,9 @@ def _async_database_url(database_url: str) -> str:
     if url.drivername == "postgresql+psycopg":
         return database_url
     if url.drivername in {"postgresql", "postgres"}:
-        return url.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
+        return url.set(drivername="postgresql+psycopg").render_as_string(
+            hide_password=False
+        )
     return database_url
 
 

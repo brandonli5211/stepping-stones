@@ -1,6 +1,6 @@
 import sys
 
-from app.commands import migrate, serve, test as run_tests
+from app.infrastructure.commands import migrate, serve, test as run_tests
 
 
 def test_test_command_launches_pytest():

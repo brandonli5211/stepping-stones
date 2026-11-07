@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_session
+from app.adapters.persistence.engine import get_session
 from app.models import Call, CallStep, CallTurn, Procedure
 
 router = APIRouter()

@@ -22,6 +22,12 @@ description: "Task list for locked backend setup and starting schema"
 ## Path Conventions
 
 - Backend: `backend/`
+- Clean Architecture packages under `backend/app/`:
+  - Domain: `backend/app/domain/`
+  - Application (use cases + ports): `backend/app/application/`
+  - Adapters: `backend/app/adapters/persistence/`, `backend/app/adapters/http/`
+  - Infrastructure: `backend/app/infrastructure/`, plus `backend/alembic/`
+  - Composition root: `backend/app/main.py`
 - Compose: `docker-compose.yml` at the repository root
 - Docs: `README.md`, `docs/SETUP.md`
 - Frontend package install stays on npm. Do not add a uv command for `frontend/`
@@ -31,6 +37,7 @@ description: "Task list for locked backend setup and starting schema"
 - uv commands are `uv run serve`, `uv run migrate`, and `uv run test`, linked as `[project.scripts]` in `backend/pyproject.toml`. There is no format or lint command in this feature.
 - `uv run migrate` is its own command in the documented startup sequence. `uv run serve` does not call Alembic. Compose starts the API with `uv run serve` only.
 - The initial table is `app_meta`. It is not a coaching table (no calls, templates, scores, or agents).
+- Clean Architecture is mandatory (constitution VII, FR-013). Domain and application modules MUST NOT import FastAPI, SQLAlchemy, or Alembic. Phases 1–5 delivered the locked install and schema; Phase 6 aligns that code with the layered layout in `plan.md`.
 
 ---
 
@@ -120,6 +127,34 @@ description: "Task list for locked backend setup and starting schema"
 
 ---
 
+## Phase 6: Clean Architecture Alignment
+
+**Purpose**: Move the feature's health check, `app_meta` rules, persistence, and command wrappers into the layered layout required by constitution Principle VII and FR-013. Phases 1–5 remain the functional baseline; this phase makes the dependency rule hold in source.
+
+**⚠️ CRITICAL**: Domain and application packages MUST NOT import FastAPI, SQLAlchemy, or Alembic. Route handlers MUST NOT embed `SELECT 1` or other connectivity logic.
+
+### Tests for Clean Architecture
+
+> Write these tests first and confirm they fail before the implementation tasks.
+
+- [X] T026 [P] Add a failing unit test in `backend/tests/test_domain_app_meta.py` that constructs the domain `AppMeta` entity from `backend/app/domain/app_meta.py`. Assert a missing or empty `key` or `value` is rejected. Assert a valid entity exposes `key` and `value`. Do not import SQLAlchemy in this test module.
+- [X] T027 [P] Add a failing unit test in `backend/tests/test_check_health.py` that calls `CheckHealth` from `backend/app/application/check_health.py` with a fake `DatabaseProbe`. When the probe reports reachable, assert the use case returns the healthy outcome. When the probe reports failure, assert the healthy outcome is not returned. Do not import FastAPI or SQLAlchemy in this test module.
+- [X] T028 [P] Add a failing unit test in `backend/tests/test_health_route.py` that calls the FastAPI health route adapter in `backend/app/adapters/http/health.py` with a fake `CheckHealth` (or injected probe wired through the use case). Assert the adapter returns `{"status": "ok", "database": "connected"}` on success and does not execute SQL itself.
+
+### Implementation for Clean Architecture
+
+- [X] T029 [P] Create `backend/app/domain/app_meta.py` with the pure `AppMeta` entity so T026 passes. No FastAPI, SQLAlchemy, or Alembic imports.
+- [X] T030 [P] Create `backend/app/application/ports.py` with a `DatabaseProbe` protocol (reachable / not reachable). Create `backend/app/application/check_health.py` so T027 passes. Application modules import domain and ports only.
+- [X] T031 [P] Move async engine/session helpers from `backend/app/db.py` to `backend/app/adapters/persistence/engine.py`. Move the SQLAlchemy `AppMeta` mapping for this feature from the flat models module into `backend/app/adapters/persistence/models.py`. Add `backend/app/adapters/persistence/database_probe.py` that implements `DatabaseProbe` with an async session. Update Alembic `env.py` imports to the new model path without changing migration revision ids.
+- [X] T032 [P] Create `backend/app/adapters/http/health.py` so T028 passes. The route is `async def`, depends on the use case (or a factory that builds it with the SQLAlchemy probe), and returns the health contract body. Remove inline health SQL from `backend/app/main.py`; `main.py` only wires the app and includes the health router.
+- [X] T033 [P] Move `serve`, `migrate`, and `test` from `backend/app/commands.py` to `backend/app/infrastructure/commands.py`. Update `[project.scripts]` in `backend/pyproject.toml` to the new module path. Keep command behavior identical. Update `backend/tests/test_commands.py` imports.
+- [X] T034 Remove or shrink the old flat modules (`backend/app/db.py`, and any health/SQL left in `backend/app/main.py` or a flat `commands.py`) so imports resolve only through the layered packages. Do not move coaching/call tables in this task beyond what is required to keep existing imports working; coaching modules outside this feature's layout are later work.
+- [X] T035 Run `uv run test` and `specs/001-adopt-uv-migrations/quickstart.md`. Confirm health still returns `ok` / `connected`, migrate is unchanged, and no domain or application module imports FastAPI, SQLAlchemy, or Alembic.
+
+**Checkpoint**: Gate VII holds for this feature's packages. Health and `app_meta` rules are testable without the web framework or ORM.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -129,6 +164,7 @@ description: "Task list for locked backend setup and starting schema"
 - **User Story 1 (Phase 3)**: Depends on Phase 2. Does not depend on User Story 2.
 - **User Story 2 (Phase 4)**: Depends on Phase 2. Does not depend on User Story 1's health or Compose command. It needs the PostgreSQL 18 service from T009.
 - **Polish (Phase 5)**: Depends on the user stories you intend to ship.
+- **Clean Architecture (Phase 6)**: Depends on Phases 3 and 4 (health and `app_meta` exist). May follow Phase 5.
 
 ### User Story Dependencies
 
@@ -148,7 +184,8 @@ description: "Task list for locked backend setup and starting schema"
 - T005, T006, and T009 can run in parallel. T007 then follows T005. T008 then follows T006.
 - T010 and T011 can run in parallel. After they fail, T012, T013, T014, and T015 can run in parallel.
 - T016 and T017 can run in parallel. After they fail, T018, T019, and T022 can run in parallel. T020 and T021 then follow T019 (T020 also follows T018).
-- T023 and T024 can run in parallel. T025 is last.
+- T023 and T024 can run in parallel. T025 follows the stories intended to ship.
+- T026, T027, and T028 can run in parallel. After they fail, T029, T030, and T033 can run in parallel. T031 and T032 follow T030. T034 follows T031–T033. T035 is last.
 
 ---
 
@@ -199,13 +236,15 @@ Task: "T022 migrate docs in README.md and docs/SETUP.md"
 2. User Story 1 → locked install and `uv run serve` → validate independently (MVP)
 3. User Story 2 → `uv run migrate` creates `app_meta` → validate the second run is a no-op
 4. Polish → README, setup notes, and `quickstart.md`
+5. Clean Architecture → layered packages for domain, application, adapters, infrastructure → validate gate VII
 
 ### Parallel Team Strategy
 
 1. Everyone finishes Setup and Foundational together
 2. Then one person takes User Story 1 (`serve`, health, Compose command) and another takes User Story 2 (model, Alembic, `migrate`)
-3. They share `backend/app/commands.py` only in sequence: `test` in T008, `serve` in T012, `migrate` in T021
+3. They share command modules only in sequence: `test` in T008, `serve` in T012, `migrate` in T021, then the move to `infrastructure/commands.py` in T033
 4. They share `docker-compose.yml` only in sequence: database in T009, backend command in T014
+5. Clean Architecture (Phase 6) is shared work after both stories land
 
 ---
 
@@ -213,6 +252,7 @@ Task: "T022 migrate docs in README.md and docs/SETUP.md"
 
 - [P] tasks use different files and do not depend on incomplete tasks
 - [US1] and [US2] map to the two stories in `spec.md`
-- Every new function ships with a test that calls it: `get_engine`, `get_session`, `test`, `serve`, the health handler, `migrate`, and the Alembic offline migration path
+- Every new function ships with a test that calls it: domain `AppMeta`, `CheckHealth`, `DatabaseProbe` adapter, `get_engine` / `get_session`, `test`, `serve`, the health route adapter, `migrate`, and the Alembic offline migration path
 - `uv run serve` stays a long-running API process. Schema apply stays `uv run migrate`
 - Do not add a formatter, a second Python installer, a frontend uv command, or coaching tables
+- Do not leave health SQL or `app_meta` validation rules inside FastAPI routers or ORM models once Phase 6 is done

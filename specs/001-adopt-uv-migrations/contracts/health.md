@@ -28,5 +28,8 @@ body above. The screen then cannot show a connected database.
 
 ## What changed inside the handler
 
-The handler is asynchronous and uses an async database session. Callers
-see the same path, the same status, and the same fields.
+The HTTP adapter is asynchronous. It does not embed the connectivity
+check. It depends on the `CheckHealth` use case, which depends on a
+`DatabaseProbe` port. The SQLAlchemy probe is the persistence adapter
+behind that port. Callers still see the same path, the same status, and
+the same fields.

@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-27
 
-**Status**: Draft
+**Status**: Draft (amended 2026-11-07 for Clean Architecture)
 
 **Input**: User description: "we need to update the project to use UV and also introduce alembic for initial db table creation."
 
@@ -128,6 +128,12 @@ starting schema.
 - **FR-012**: Every new function added for this feature MUST have an
   automated check in the same change. The check MUST call the function
   and assert its result or the failure it is specified to raise.
+- **FR-013**: Feature behavior for health and the starting `app_meta`
+  record MUST keep application rules separate from delivery and storage
+  adapters. The HTTP health path MUST only report results produced by
+  that application behavior. The starting-record rules (required unique
+  key, required value) MUST be expressible without depending on a
+  specific web framework or ORM.
 
 ### Key Entities
 
@@ -161,6 +167,10 @@ starting schema.
   screens required.
 - **SC-006**: Every new function in the change has an automated check.
   Removing or breaking that function's specified behavior fails the check.
+- **SC-007**: Health reporting and starting-record rules can be checked
+  without standing up the HTTP server or the ORM session layer. Breaking
+  the separation so those rules only exist inside the web route or the
+  table mapping fails the automated checks for this feature.
 
 ## Assumptions
 
@@ -178,9 +188,9 @@ starting schema.
   history applied to an empty database. Product tables arrive with the
   features that need them, as further recorded revisions.
 - Project rules already require recorded schema changes, one shared
-  database, and an automated check for every new function. This feature
-  does not relax those rules. It also does not, by itself, redesign
-  unrelated existing code. Any file this feature edits still has to
-  follow those rules.
+  database, an automated check for every new function, and Clean
+  Architecture for feature code. This feature does not relax those
+  rules. It also does not, by itself, redesign unrelated existing code.
+  Any file this feature edits still has to follow those rules.
 - An existing local database that already has data is kept. The schema
   step must not wipe it.

@@ -49,6 +49,26 @@ place.
 ## Starting schema: `app_meta`
 
 The initial application table. Created only by the first Alembic revision.
+Clean Architecture splits this into a domain entity and a persistence
+mapping.
+
+### Domain entity (`app/domain/app_meta.py`)
+
+Pure type. No SQLAlchemy, FastAPI, or Alembic imports.
+
+| Field | Rules |
+| --- | --- |
+| `id` | Optional until persisted. Identity is assigned by the database. |
+| `key` | Required non-empty text. Unique among entities of this type. |
+| `value` | Required non-empty text. |
+
+Validation lives on the entity (or a domain factory). A missing `key` or
+`value` is rejected before any adapter runs. Uniqueness across rows is a
+domain rule enforced when persisting through an adapter.
+
+### Persistence mapping (`app/adapters/persistence/models.py`)
+
+SQLAlchemy table mapping that mirrors the entity for PostgreSQL.
 
 | Column | Type | Rules |
 | --- | --- | --- |
@@ -65,9 +85,10 @@ Validation:
 - The table may contain zero rows after the migration. This feature does
   not seed coaching data or require a starting row.
 
-The health check does not read `app_meta`. It still only checks that the
-database accepts a connection. Presence of the table is checked by the
-migration command and by the offline SQL test.
+The health check does not read `app_meta`. The `CheckHealth` use case
+only asks a `DatabaseProbe` whether the database accepts a connection.
+Presence of the table is checked by the migration command and by the
+offline SQL test.
 
 ## Out of this model
 

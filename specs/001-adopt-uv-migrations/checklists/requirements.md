@@ -42,3 +42,7 @@
   scope. The application does not store them yet.
 - No git branch was created. Branch creation is a Spec Kit hook, and no
   before-specify hook is configured.
+- Amendment 2026-11-07: FR-013 and SC-007 record Clean Architecture
+  separation (health and starting-record rules independent of a specific
+  web framework or ORM). Concrete package paths stay in plan.md and
+  tasks.md, not in the stakeholder-facing requirement text.

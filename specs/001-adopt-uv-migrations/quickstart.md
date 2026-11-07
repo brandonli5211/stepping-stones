@@ -37,7 +37,8 @@ uv run test
 ```
 
 Expected: the suite exits 0. The migration check reports that the revision
-creates `app_meta`. No Compose services are required.
+creates `app_meta`. Domain and `CheckHealth` tests pass without FastAPI or
+SQLAlchemy imports. No Compose services are required.
 
 ## 3. Schema on an empty database
 

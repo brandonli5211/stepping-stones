@@ -18,21 +18,20 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.adapters.persistence.models import AppMeta, Base
 
-class Base(DeclarativeBase):
-    pass
-
-
-class AppMeta(Base):
-    """Non-coaching starting table. Rows are optional and are not seeded."""
-
-    __tablename__ = "app_meta"
-
-    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    value: Mapped[str] = mapped_column(Text, nullable=False)
+__all__ = [
+    "AppMeta",
+    "Base",
+    "Student",
+    "Agent",
+    "Procedure",
+    "Call",
+    "CallTurn",
+    "CallStep",
+]
 
 
 class Student(Base):
