@@ -9,12 +9,14 @@
 ## Summary
 
 <!--
-  REQUIRED for this project (constitution 1.4+):
+  REQUIRED for this project (constitution 1.5+):
   - Name exactly ONE primary application use case (Clean Architecture).
   - One short paragraph: primary requirement + technical approach.
   - One short paragraph: which layers that use case touches and that
     dependencies point inward (domain ← application/ports ← adapters ←
     infrastructure/UI). Do not plan a second use case here.
+  - Also fill the Use Cases section below; keep it accurate after Phase 0
+    and again after Phase 1.
 -->
 
 **Primary use case**: `[UseCaseName]` — [one sentence: what behavior it owns]
@@ -22,6 +24,19 @@
 [Primary requirement + technical approach from research]
 
 [Clean Architecture path for this use case: entities/rules → use case + ports → adapters → infrastructure/composition/UI]
+
+## Use Cases
+
+<!--
+  REQUIRED (constitution 1.5+): List application use cases after each
+  /speckit-plan phase. Exactly ONE primary use case per feature.
+-->
+
+| Use case | Responsibility | Module |
+| --- | --- | --- |
+| `[UseCaseName]` (primary) | [One sentence: what it owns; what it must not do] | `backend/app/application/[use_case].py` |
+
+**Out of scope for this plan**: [Other candidate use cases deferred to later features, if any]
 
 ## Technical Context
 

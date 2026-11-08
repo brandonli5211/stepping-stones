@@ -1,11 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.3.0 → 1.4.0
-- Rationale: workflow guidance expanded for compact Speckit plans/tasks.
+- Version change: 1.4.0 → 1.5.0
+- Rationale: plan.md must list application use cases after each Speckit
+  plan phase; compact one-use-case / 5–6-task rules retained from 1.4.
 - Modified principles: none renamed; Principle VII unchanged in meaning
 - Added sections: none
-- Workflow update: each feature plans/tasks one Clean Architecture use
-  case; plan Summary must name it; tasks.md limited to about 5–6 tasks
+- Workflow update: after Phase 0 and Phase 1 of /speckit-plan, plan.md
+  MUST include a Use Cases section (exactly one primary use case with
+  name, responsibility, module path); Summary still names that use case;
+  tasks.md remains about 5–6 tasks for that single vertical slice
 - Follow-up TODOs: none
 -->
 
@@ -161,6 +164,14 @@ the rubric and use cases independent of FastAPI, Postgres wiring, and React.
   application use case and summarize the inward dependency path for that
   use case. Additional use cases belong in a later feature, not in the
   same plan.
+- After each Spec Kit plan phase (`/speckit-plan` Phase 0 research and
+  Phase 1 design), `plan.md` MUST include a **Use Cases** section that
+  lists every application use case this feature will implement. That list
+  MUST contain exactly one primary use case for the feature: name,
+  one-sentence responsibility, and planned module path (for example
+  `backend/app/application/<use_case>.py`). The section MUST be present
+  and accurate when the plan command finishes; a plan without a Use Cases
+  listing MUST NOT be accepted.
 - Each feature's `tasks.md` MUST implement that one use case as a single
   vertical slice. The task list MUST stay around 5–6 tasks and MUST NOT
   exceed 6. Stakeholder stories in `spec.md` MAY inform the use case; they
@@ -188,4 +199,4 @@ Versioning follows semantic versioning:
   expanded.
 - PATCH: wording is clarified and the rule itself does not change.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08
+**Version**: 1.5.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08
