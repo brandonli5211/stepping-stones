@@ -8,7 +8,20 @@
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+<!--
+  REQUIRED for this project (constitution 1.4+):
+  - Name exactly ONE primary application use case (Clean Architecture).
+  - One short paragraph: primary requirement + technical approach.
+  - One short paragraph: which layers that use case touches and that
+    dependencies point inward (domain ← application/ports ← adapters ←
+    infrastructure/UI). Do not plan a second use case here.
+-->
+
+**Primary use case**: `[UseCaseName]` — [one sentence: what behavior it owns]
+
+[Primary requirement + technical approach from research]
+
+[Clean Architecture path for this use case: entities/rules → use case + ports → adapters → infrastructure/composition/UI]
 
 ## Technical Context
 

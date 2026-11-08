@@ -1,13 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.0 → 1.3.0
-- Rationale: new principle added; existing principles unchanged in meaning.
-- Modified principles: none renamed
-- Added sections:
-  - VII. Clean Architecture (NON-NEGOTIABLE)
-- Removed sections: none
-- Workflow update: reviewers must reject feature code that violates the
-  dependency rule or mixes layers
+- Version change: 1.3.0 → 1.4.0
+- Rationale: workflow guidance expanded for compact Speckit plans/tasks.
+- Modified principles: none renamed; Principle VII unchanged in meaning
+- Added sections: none
+- Workflow update: each feature plans/tasks one Clean Architecture use
+  case; plan Summary must name it; tasks.md limited to about 5–6 tasks
 - Follow-up TODOs: none
 -->
 
@@ -159,6 +157,14 @@ the rubric and use cases independent of FastAPI, Postgres wiring, and React.
 - Spec Kit plans and tasks for a feature MUST name the Clean Architecture
   layers the work will touch and MUST NOT schedule domain logic inside
   framework or UI modules.
+- Each feature's `plan.md` Summary MUST name exactly one primary
+  application use case and summarize the inward dependency path for that
+  use case. Additional use cases belong in a later feature, not in the
+  same plan.
+- Each feature's `tasks.md` MUST implement that one use case as a single
+  vertical slice. The task list MUST stay around 5–6 tasks and MUST NOT
+  exceed 6. Stakeholder stories in `spec.md` MAY inform the use case; they
+  MUST NOT explode into separate multi-phase story task trees.
 - A ticket moves Backlog → Ready → In progress → In review → Done. Move it
   to In progress when work starts, to In review when the pull request
   opens, and to Done when it merges.
@@ -182,4 +188,4 @@ Versioning follows semantic versioning:
   expanded.
 - PATCH: wording is clarified and the rule itself does not change.
 
-**Version**: 1.3.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-07
+**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08
