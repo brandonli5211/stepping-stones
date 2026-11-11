@@ -137,9 +137,12 @@ async def list_calls(
     limit and the list is just the `limit` most recent calls.
     """
     now = datetime.now(timezone.utc)
+    if os.environ.get("DEMO_TODAY"):
+        now = datetime.fromisoformat(os.environ["DEMO_TODAY"])
     window = ([Call.started_at >= now - timedelta(weeks=weeks)] if weeks else []) + ([Call.agent_id == agent_id] if agent_id else [])
 
     shown = list(window)
+  
     if call_type:
         shown.append(Call.call_type == snake(call_type))
     if has_missed:  # a step that was missed or done wrong
