@@ -20,6 +20,7 @@ dev = [
 serve = "app.infrastructure.commands:serve"
 migrate = "app.infrastructure.commands:migrate"
 test = "app.infrastructure.commands:test"
+apply-demo-results = "app.infrastructure.apply_demo_results:main"
 
 [build-system]
 requires = ["hatchling"]
