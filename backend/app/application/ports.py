@@ -1,8 +1,10 @@
 """Application ports for use cases."""
 
 from collections.abc import Collection, Mapping, Sequence
+from datetime import datetime
 from typing import Protocol
 
+from app.domain.call_list import CallRecord, CallWindow, ListFilter, WeekTotals
 from app.domain.demo_results import ScoredCall, StoredCall
 
 
@@ -24,3 +26,23 @@ class DemoCallStore(Protocol):
 
     async def save_results(self, calls: Sequence[ScoredCall]) -> None:
         """Write the new step results and call totals."""
+
+
+class Clock(Protocol):
+    """The reference instant for "now"."""
+
+    def now(self) -> datetime:
+        """An aware datetime."""
+
+
+class CallListReader(Protocol):
+    """Reads what the calls list needs."""
+
+    async def recent_calls(self, window: CallWindow, filters: ListFilter, limit: int) -> Sequence[CallRecord]:
+        """Calls in the window that pass the filters, newest first, each with its steps in step order."""
+
+    async def count_calls(self, window: CallWindow) -> int:
+        """Number of calls in the window."""
+
+    async def week_totals(self, window: CallWindow) -> Sequence[WeekTotals]:
+        """Steps completed and total per UTC Monday-start week in the window, oldest week first."""

@@ -11,17 +11,16 @@ import os
 import re
 import urllib.error
 import urllib.request
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.persistence.engine import get_session
-from app.models import Call, CallStep, CallTurn, Procedure
+from app.models import Call, CallTurn, Procedure
 
 router = APIRouter()
 
@@ -30,9 +29,6 @@ class AnalyzeRequest(BaseModel):
     model: str | None = None  # Ollama model name; default OLLAMA_MODEL
     dry_run: bool = False  # True: return the prompt without calling the model
 
-
-def snake(text: str) -> str:
-    return "_".join(str(text).strip().lower().split())
 
 
 def load_common() -> dict:
@@ -117,73 +113,3 @@ async def analyze_call(call_id: int, body: AnalyzeRequest | None = None, session
         parsed = None
     return {"id": call.id, "external_id": call.external_id, "call_type": call.call_type, "model": model, "result": parsed, "raw": answer}
 
-
-def _percent(done, total):
-    return round(100 * done / total) if total else None
-
-
-@router.get("/calls")
-async def list_calls(
-    agent_id: int | None = None,
-    call_type: str | None = None,
-    has_missed: bool = False,
-    limit: int = Query(10, ge=1, le=100),
-    weeks: int | None = Query(None, ge=1, le=520),
-    session: AsyncSession = Depends(get_session),
-) -> dict:
-    """The master list: the most recent calls (newest first) with their steps, plus the header numbers.
-
-    weeks limits everything (list and header numbers) to calls from the last N weeks. Left out, there is no date
-    limit and the list is just the `limit` most recent calls.
-    """
-    now = datetime.now(timezone.utc)
-    window = ([Call.started_at >= now - timedelta(weeks=weeks)] if weeks else []) + ([Call.agent_id == agent_id] if agent_id else [])
-
-    shown = list(window)
-    if call_type:
-        shown.append(Call.call_type == snake(call_type))
-    if has_missed:  # a step that was missed or done wrong
-        shown.append(Call.steps_missed + Call.steps_wrong > 0)
-    rows = (await session.execute(
-        select(Call.id, Call.external_id, Call.call_type, Procedure.name, Call.started_at, Call.status, Call.score,
-               Call.steps_completed, Call.steps_total)
-        .join(Procedure, Procedure.id == Call.procedure_id)
-        .where(*shown).order_by(Call.started_at.desc(), Call.id.desc()).limit(limit)
-    )).all()
-
-    steps: dict[int, list] = {r.id: [] for r in rows}
-    if rows:
-        for st in (await session.execute(
-            select(CallStep.call_id, CallStep.step_key, CallStep.name, CallStep.status)
-            .where(CallStep.call_id.in_(list(steps))).order_by(CallStep.call_id, CallStep.position)
-        )).all():
-            steps[st.call_id].append({"key": st.step_key, "name": st.name, "status": st.status})
-
-    calls = []
-    for r in rows:
-        problem = next((x for x in steps[r.id] if x["status"] in ("missed", "wrong")), None)
-        calls.append({
-            "id": r.id, "external_id": r.external_id, "call_type": r.call_type, "call_type_name": r.name,
-            "started_at": r.started_at, "status": r.status, "score": r.score,
-            "steps_completed": r.steps_completed, "steps_total": r.steps_total, "steps": steps[r.id],
-            "result": None if problem is None else {"label": f"Missed {problem['name']}" if problem["status"] == "missed" else f"Wrong: {problem['name']}", "status": problem["status"]},
-        })
-
-    reviewed = await session.scalar(select(func.count()).select_from(Call).where(*window))
-    week = func.date_trunc("week", Call.started_at)
-    by_week = (await session.execute(
-        select(week.label("week"), func.sum(Call.steps_completed).label("done"), func.sum(Call.steps_total).label("total"))
-        .where(*window).group_by(week).order_by(week)
-    )).all()
-    monday = (now - timedelta(days=now.weekday())).date()
-    this_week = next((w for w in by_week if w.week.date() == monday), None)
-    first_week = by_week[0] if by_week else None
-    return {
-        "summary": {
-            "calls_reviewed": reviewed, "weeks": weeks,
-            "this_week": None if this_week is None else {
-                "steps_completed": int(this_week.done), "steps_total": int(this_week.total), "percent": _percent(this_week.done, this_week.total)},
-            "first_week_percent": None if first_week is None else _percent(first_week.done, first_week.total),
-        },
-        "calls": calls,
-    }
