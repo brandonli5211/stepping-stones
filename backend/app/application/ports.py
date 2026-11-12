@@ -4,6 +4,7 @@ from collections.abc import Collection, Mapping, Sequence
 from datetime import datetime
 from typing import Protocol
 
+from app.domain.call_analysis import CallToAnalyze
 from app.domain.call_list import CallRecord, CallWindow, ListFilter, WeekTotals
 from app.domain.demo_results import ScoredCall, StoredCall
 
@@ -46,3 +47,39 @@ class CallListReader(Protocol):
 
     async def week_totals(self, window: CallWindow) -> Sequence[WeekTotals]:
         """Steps completed and total per UTC Monday-start week in the window, oldest week first."""
+
+
+class RulesUnavailable(Exception):
+    """The shared rules file could not be found."""
+
+    def __init__(self, path: str) -> None:
+        super().__init__(f"missing rules file: {path} (set RULES_DIR)")
+        self.path = path
+
+
+class ModelUnavailable(Exception):
+    """The language model could not give an answer."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"could not get an answer from Ollama: {reason}")
+        self.reason = reason
+
+
+class CallAnalysisSource(Protocol):
+    """Loads what analyzing one call needs."""
+
+    async def load(self, call_id: int) -> CallToAnalyze | None:
+        """The call with its procedure rules, or None when there is no such call."""
+
+    async def turns(self, call_id: int) -> list[tuple[str, str]]:
+        """The call's stored (speaker, text) turns in turn order."""
+
+
+class PromptTemplateSource(Protocol):
+    async def load(self) -> dict:
+        """The shared prompt template and field types. Raises RulesUnavailable."""
+
+
+class LanguageModel(Protocol):
+    async def ask(self, prompt: str, model: str | None) -> tuple[str, str]:
+        """(model name, answer text). Raises ModelUnavailable."""
