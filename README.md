@@ -94,6 +94,15 @@ npm run dev
 
 Set `VITE_API_URL` to the API base URL if it is not `http://localhost:8000`. The frontend stays on npm; there is no uv command for `frontend/`.
 
+Other frontend settings (in `.env` for Compose, or in your shell):
+
+| Setting | What it does |
+| --- | --- |
+| `VITE_SAMPLE_DATA=true` | Screens that load through `src/gateway.ts` get example answers instead of calling the API. Use it to build a screen before its endpoint exists. |
+| `VITE_AGENT_NAME`, `VITE_AGENT_ROLE` | Name and role at the bottom of the left menu. The name shows "Agent" when unset. |
+
+Frontend checks: `npm test` runs the unit tests and `npm run lint` type-checks the code.
+
 ## Project structure
 
 ```
