@@ -1,30 +1,21 @@
-import { Sidebar } from "./components/Sidebar.jsx";
-import { StoneSprite } from "./components/Stone.jsx";
-import CallDetailPage from "./pages/CallDetailPage.jsx";
-import MyCallsPage from "./pages/MyCallsPage.jsx";
-import ProceduresPage from "./pages/ProceduresPage.jsx";
-import ProgressPage from "./pages/ProgressPage.jsx";
-import { RouteOutlet, RouterProvider, paths } from "./router.jsx";
+import { useEffect, useState } from "react";
 
-// The app's only screens. `navKey` picks the highlighted menu item;
-// routes without `navLabel` (call detail) have no menu item of their own.
-const routes = [
-  { path: paths.myCalls, component: MyCallsPage, navKey: "calls", navLabel: "My calls" },
-  { path: paths.callDetail(), component: CallDetailPage, navKey: "calls" },
-  { path: paths.progress, component: ProgressPage, navKey: "progress", navLabel: "Progress" },
-  { path: paths.procedures, component: ProceduresPage, navKey: "procedures", navLabel: "Procedures" },
-];
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export default function App() {
+  const [health, setHealth] = useState("checking...");
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/health`)
+      .then((r) => r.json())
+      .then((d) => setHealth(`${d.status} (database: ${d.database})`))
+      .catch(() => setHealth("backend unreachable"));
+  }, []);
+
   return (
-    <RouterProvider routes={routes}>
-      <StoneSprite />
-      <div className="shell">
-        <Sidebar items={routes.filter((r) => r.navLabel)} />
-        <main className="main">
-          <RouteOutlet />
-        </main>
-      </div>
-    </RouterProvider>
+    <main style={{ fontFamily: "system-ui, sans-serif", padding: 32 }}>
+      <h1>Stepping Stones</h1>
+      <p>Backend health: {health}</p>
+    </main>
   );
 }
