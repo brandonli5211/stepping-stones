@@ -6,6 +6,7 @@ only (constitution Principles I and VII). No framework, ORM or HTTP imports.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Literal, get_args
 
@@ -205,6 +206,10 @@ class CallDetail:
 # --- Rules -----------------------------------------------------------------------------------------------------------
 
 
+def _in_order(steps: tuple[StepRecord, ...]) -> tuple[StepRecord, ...]:
+    return tuple(sorted(steps, key=lambda s: s.position))
+
+
 def summarize_score(steps: tuple[StepRecord, ...]) -> ScoreSummary:
     """100 minus the points lost on the steps. No steps yet (a pending call): no score."""
     points_lost = sum(s.points_lost for s in steps)
@@ -216,3 +221,48 @@ def summarize_score(steps: tuple[StepRecord, ...]) -> ScoreSummary:
         critical_count=sum(s.severity == "critical" for s in steps),
         points_under_review=sum(s.points_under_review for s in steps),
     )
+
+
+def notes_by_turn(steps: tuple[StepRecord, ...]) -> dict[int, tuple[Note, ...]]:
+    """Notes for each evidence turn: "Evidence for <step>" on completed steps, "Wrong: <why>" on wrong ones.
+    Missed and under-review steps add none."""
+    notes: dict[int, list[Note]] = {}
+    for s in _in_order(steps):
+        if s.evidence_turn_idx is None:
+            continue
+        if s.status == "completed":
+            note = Note("evidence", s.key, f"Evidence for {s.name}")
+        elif s.status == "wrong":
+            note = Note("wrong", s.key, f"Wrong: {s.detail or s.name}")
+        else:
+            continue
+        notes.setdefault(s.evidence_turn_idx, []).append(note)
+    return {idx: tuple(n) for idx, n in notes.items()}
+
+
+def flags(steps: tuple[StepRecord, ...], call_type: str = "") -> tuple[Flag, ...]:
+    """One flag per missed or wrong step, in procedure order. Its message comes from the call type's builder when it
+    has one, else from the step's stored reason."""
+    build = FLAG_MESSAGE_BUILDERS.get(call_type)
+    return tuple(
+        Flag(s.key, s.name, s.status, s.severity, s.points_lost,  # type: ignore[arg-type]
+             (build(s) if build else None) or s.detail)
+        for s in _in_order(steps)
+        if s.status in ("missed", "wrong")
+    )
+
+
+def evidence_for(step: StepRecord, turns: tuple[TurnRecord, ...]) -> Evidence | None:
+    """The quote that proves the step and the time of its turn. None without both a turn and a quote."""
+    if step.evidence_turn_idx is None or not step.evidence_quote:
+        return None
+    turn = next((t for t in turns if t.idx == step.evidence_turn_idx), None)
+    return Evidence(step.evidence_quote, step.evidence_turn_idx, turn.start_seconds if turn else None)
+
+
+def coaching_for(step: StepRecord) -> str | None:
+    """Coaching is for what went wrong: missed and wrong steps only. Completed and under-review steps get none."""
+    return step.coaching if step.status in ("missed", "wrong") else None
+
+
+FLAG_MESSAGE_BUILDERS: Mapping[str, Callable[[StepRecord], str | None]] = {}
