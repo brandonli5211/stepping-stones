@@ -200,3 +200,19 @@ class CallDetail:
     steps: tuple[StepDetail, ...]
     flags: tuple[Flag, ...]
     type_details: TypeDetails
+
+
+# --- Rules -----------------------------------------------------------------------------------------------------------
+
+
+def summarize_score(steps: tuple[StepRecord, ...]) -> ScoreSummary:
+    """100 minus the points lost on the steps. No steps yet (a pending call): no score."""
+    points_lost = sum(s.points_lost for s in steps)
+    return ScoreSummary(
+        score=max(0, OUT_OF - points_lost) if steps else None,
+        steps_done_right=sum(s.status == "completed" for s in steps),
+        steps_total=len(steps),
+        points_lost=points_lost,
+        critical_count=sum(s.severity == "critical" for s in steps),
+        points_under_review=sum(s.points_under_review for s in steps),
+    )

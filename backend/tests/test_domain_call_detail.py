@@ -8,7 +8,50 @@ from app.domain.call_detail import (
     StepRecord,
     SubCheck,
     TurnRecord,
+    summarize_score,
 )
+from call_detail_fixtures import check_balance_call, transfer_money_call
+
+
+# --- summarize_score -------------------------------------------------------------------------------------------------
+
+def test_summarize_score_matches_the_transfer_money_mock():
+    score = summarize_score(transfer_money_call().steps)
+    assert (score.score, score.out_of) == (45, 100)
+    assert (score.steps_done_right, score.steps_total) == (6, 7)
+    assert score.points_lost == 55
+    assert score.critical_count == 1
+    assert score.points_under_review == 0
+    assert score.provisional is False
+
+
+def test_summarize_score_is_100_when_nothing_is_lost():
+    score = summarize_score(check_balance_call().steps)
+    assert (score.score, score.steps_done_right, score.steps_total, score.points_lost) == (100, 3, 3, 0)
+    assert score.critical_count == 0
+
+
+def test_summarize_score_is_provisional_while_a_step_is_under_review():
+    steps = (
+        StepRecord("a", 1, "A", 40, "completed"),
+        StepRecord("b", 2, "B", 60, "under_review", points_under_review=15),
+    )
+    score = summarize_score(steps)
+    assert score.score == 100
+    assert score.points_under_review == 15
+    assert score.provisional is True
+    assert score.steps_done_right == 1
+
+
+def test_summarize_score_has_no_score_without_steps():
+    score = summarize_score(())
+    assert score.score is None
+    assert (score.steps_done_right, score.steps_total, score.points_lost) == (0, 0, 0)
+
+
+def test_summarize_score_never_goes_below_zero():
+    steps = (StepRecord("a", 1, "A", 80, "wrong", points_lost=80), StepRecord("b", 2, "B", 40, "missed", points_lost=40))
+    assert summarize_score(steps).score == 0
 
 
 # --- private helpers -------------------------------------------------------------------------------------------------
