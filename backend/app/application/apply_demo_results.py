@@ -10,6 +10,8 @@ from app.domain.demo_results import (
     ResultsRow,
     SeverityBand,
     duplicate_problems,
+    evidence_problems,
+    has_evidence,
     row_problems,
     score_call,
 )
@@ -27,7 +29,7 @@ class ApplyOutcome:
 
 @dataclass(frozen=True)
 class ApplyDemoResults:
-    """Validate every results row, then rescore and save all calls, or save nothing."""
+    """Validate every results row and its evidence, then rescore and save all calls, or save nothing."""
 
     store: DemoCallStore
     bands: tuple[SeverityBand, ...]
@@ -35,9 +37,13 @@ class ApplyDemoResults:
     async def execute(self, rows: Sequence[ResultsRow]) -> ApplyOutcome:
         ids = list(dict.fromkeys(r.external_id for r in rows))
         stored = await self.store.find_calls(ids)
+        evidence_ids = list(dict.fromkeys(r.external_id for r in rows if has_evidence(r) and r.external_id in stored))
+        turns = await self.store.find_turns(evidence_ids) if evidence_ids else {}
         problems = duplicate_problems(rows)
         for r in rows:
             problems += row_problems(r, stored.get(r.external_id))
+            if r.external_id in stored:
+                problems += evidence_problems(r, turns.get(r.external_id, {}))
         if problems:
             return ApplyOutcome(updated=0, problems=tuple(problems), saved=False)
         await self.store.save_results([score_call(r, stored[r.external_id], self.bands) for r in rows])

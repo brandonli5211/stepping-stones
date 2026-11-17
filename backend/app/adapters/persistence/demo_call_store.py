@@ -11,10 +11,11 @@ from sqlalchemy import bindparam, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.demo_results import ScoredCall, StoredCall, StoredStep
-from app.models import Call, CallStep
+from app.models import Call, CallStep, CallTurn
 
 _calls = Call.__table__
 _steps = CallStep.__table__
+_turns = CallTurn.__table__
 
 FIND_CALLS = (
     select(
@@ -24,6 +25,13 @@ FIND_CALLS = (
     .select_from(_calls.outerjoin(_steps, _steps.c.call_id == _calls.c.id))
     .where(_calls.c.external_id.in_(bindparam("external_ids", expanding=True)))
     .order_by(_calls.c.external_id, _steps.c.position)
+)
+
+FIND_TURNS = (
+    select(_calls.c.external_id, _turns.c.idx, _turns.c.text)
+    .select_from(_calls.join(_turns, _turns.c.call_id == _calls.c.id))
+    .where(_calls.c.external_id.in_(bindparam("external_ids", expanding=True)))
+    .order_by(_calls.c.external_id, _turns.c.idx)
 )
 
 UPDATE_CALL = (
@@ -44,6 +52,7 @@ UPDATE_STEP = (
     .values(
         status=bindparam("b_status"), severity=bindparam("b_severity"), points_lost=bindparam("b_points_lost"),
         points_under_review=0, detail=bindparam("b_detail"),
+        evidence_turn_idx=bindparam("b_evidence_turn_idx"), evidence_quote=bindparam("b_evidence_quote"),
     )
 )
 
@@ -61,6 +70,14 @@ def to_stored_calls(rows: Iterable[Sequence]) -> dict[str, StoredCall]:
     return {eid: StoredCall(eid, call_type, tuple(steps)) for eid, (call_type, steps) in grouped.items()}
 
 
+def to_turn_texts(rows: Iterable[Sequence]) -> dict[str, dict[int, str]]:
+    """Group (external_id, idx, text) rows into {external_id: {idx: text}}."""
+    grouped: dict[str, dict[int, str]] = {}
+    for external_id, idx, text in rows:
+        grouped.setdefault(external_id, {})[idx] = text
+    return grouped
+
+
 def call_params(call: ScoredCall) -> dict:
     return {
         "b_external_id": call.external_id, "b_started_at": call.started_at, "b_score": call.score,
@@ -73,7 +90,8 @@ def call_params(call: ScoredCall) -> dict:
 def step_params(call_id: int, call: ScoredCall) -> list[dict]:
     return [
         {"b_call_id": call_id, "b_step_key": s.key, "b_status": s.status, "b_severity": s.severity,
-         "b_points_lost": s.points_lost, "b_detail": s.detail}
+         "b_points_lost": s.points_lost, "b_detail": s.detail,
+         "b_evidence_turn_idx": s.evidence_turn, "b_evidence_quote": s.evidence_quote}
         for s in call.steps
     ]
 
@@ -89,6 +107,12 @@ class SqlAlchemyDemoCallStore:
             return {}
         result = await self._session.execute(FIND_CALLS, {"external_ids": list(external_ids)})
         return to_stored_calls(result.all())
+
+    async def find_turns(self, external_ids: Collection[str]) -> Mapping[str, Mapping[int, str]]:
+        if not external_ids:
+            return {}
+        result = await self._session.execute(FIND_TURNS, {"external_ids": list(external_ids)})
+        return to_turn_texts(result.all())
 
     async def save_results(self, calls: Sequence[ScoredCall]) -> None:
         for call in calls:

@@ -44,6 +44,8 @@ def test_demo_48_numbers():
     assert sum(len(c.steps) for c in scored) == 281
     transfer = next(c for c in scored if c.external_id == "a2f086d27b3a4f96")
     assert (transfer.score, transfer.points_lost, transfer.steps_wrong) == (45, 55, 1)
+    cited = [(c.external_id, s.key, s.evidence_turn) for c in scored for s in c.steps if s.evidence_turn is not None]
+    assert cited == [("a2f086d27b3a4f96", "submit_and_confirm_transfer", 9)]
 
     reader = MemoryCallListReader(stored, scored, names)
     listed = asyncio.run(ListCalls(reader=reader, clock=FixedClock(DEMO_TODAY)).execute(ListCallsQuery(limit=100, weeks=8)))

@@ -11,8 +11,16 @@ from app.domain.demo_results import ResultsRow, SeverityBand, parse_step_keys
 REQUIRED_COLUMNS = ("demo_id", "hvb_call_id", "call_type", "date", "time", "missed_steps", "wrong_steps")
 
 
+def _optional(r: dict, column: str) -> str:
+    """A missing column or a short row gives ""."""
+    return (r.get(column) or "").strip()
+
+
 def read_results_csv(path: Path) -> list[ResultsRow]:
-    """One ResultsRow per CSV row. Raises ValueError naming any missing required column."""
+    """One ResultsRow per CSV row. Raises ValueError naming any missing required column.
+
+    The evidence columns are optional and are read as raw stripped strings; the domain validates them.
+    """
     with Path(path).open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         missing = [c for c in REQUIRED_COLUMNS if c not in (reader.fieldnames or [])]
@@ -27,6 +35,9 @@ def read_results_csv(path: Path) -> list[ResultsRow]:
                 time=r["time"].strip(),
                 missed=parse_step_keys(r["missed_steps"]),
                 wrong=parse_step_keys(r["wrong_steps"]),
+                evidence_step=_optional(r, "evidence_step"),
+                evidence_turn=_optional(r, "evidence_turn"),
+                evidence_quote=_optional(r, "evidence_quote"),
             )
             for r in reader
         ]

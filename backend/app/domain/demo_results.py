@@ -5,7 +5,7 @@ Standard library only. No FastAPI, SQLAlchemy, Alembic, or psycopg.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -31,6 +31,17 @@ class ResultsRow:
     time: str
     missed: frozenset[str]
     wrong: frozenset[str]
+    # Optional hand-labelled evidence for one missed or wrong step, kept raw so that problems name the row.
+    evidence_step: str = ""
+    evidence_turn: str = ""
+    evidence_quote: str = ""
+
+
+@dataclass(frozen=True)
+class StepEvidence:
+    step: str
+    turn: int
+    quote: str
 
 
 @dataclass(frozen=True)
@@ -56,6 +67,8 @@ class ScoredStep:
     severity: str
     points_lost: int
     detail: str | None
+    evidence_turn: int | None = None
+    evidence_quote: str | None = None
 
 
 @dataclass(frozen=True)
@@ -127,20 +140,69 @@ def row_problems(row: ResultsRow, stored: StoredCall | None) -> list[str]:
     return problems
 
 
+def _evidence_values(row: ResultsRow) -> tuple[str, str, str]:
+    return row.evidence_step.strip(), row.evidence_turn.strip(), row.evidence_quote.strip()
+
+
+def has_evidence(row: ResultsRow) -> bool:
+    """True when any of the row's three evidence values is filled in."""
+    return any(_evidence_values(row))
+
+
+def evidence_problems(row: ResultsRow, turns: Mapping[int, str]) -> list[str]:
+    """Everything wrong with the row's evidence against its call's stored turns (turn number -> text).
+
+    Empty when the row has no evidence or the evidence is valid. The quote must appear word for word (exact,
+    case-sensitive) in the turn it names.
+    """
+    if not has_evidence(row):
+        return []
+    prefix = f"{row.demo_id}: "
+    step, turn, quote = _evidence_values(row)
+    if not (step and turn and quote):
+        return [prefix + "evidence needs evidence_step, evidence_turn and evidence_quote"]
+    if not (turn.isascii() and turn.isdigit()) or int(turn) < 1:
+        return [prefix + f"bad evidence turn {turn}"]
+    problems = []
+    if step not in row.missed | row.wrong:
+        problems.append(prefix + f"evidence step {step} is not missed or wrong")
+    number = int(turn)
+    if number not in turns:
+        problems.append(prefix + f"call has no turn {number}")
+    elif quote not in turns[number]:
+        problems.append(prefix + f"quote not in turn {number}")
+    return problems
+
+
+def evidence_for(row: ResultsRow) -> StepEvidence | None:
+    """The row's evidence, or None. Call only for a row whose evidence_problems are empty."""
+    if not has_evidence(row):
+        return None
+    step, turn, quote = _evidence_values(row)
+    return StepEvidence(step=step, turn=int(turn), quote=quote)
+
+
 def score_call(row: ResultsRow, stored: StoredCall, bands: Sequence[SeverityBand]) -> ScoredCall:
-    """New step results and call totals for a valid row (see row_problems)."""
+    """New step results and call totals for a valid row (see row_problems and evidence_problems).
+
+    The step named by the row's evidence carries it; every other step has none.
+    """
+    evidence = evidence_for(row)
     steps = []
     counts = {COMPLETED: 0, MISSED: 0, WRONG: 0}
     total_lost = 0
     for step in stored.steps:
         status = MISSED if step.key in row.missed else WRONG if step.key in row.wrong else COMPLETED
         lost = 0 if status == COMPLETED else step.points
+        cited = evidence is not None and evidence.step == step.key
         steps.append(ScoredStep(
             key=step.key,
             status=status,
             severity=severity_for(bands, lost),
             points_lost=lost,
             detail=step.detail if status == step.status else None,
+            evidence_turn=evidence.turn if cited else None,
+            evidence_quote=evidence.quote if cited else None,
         ))
         counts[status] += 1
         total_lost += lost

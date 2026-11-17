@@ -25,8 +25,11 @@ class DemoCallStore(Protocol):
     async def find_calls(self, external_ids: Collection[str]) -> Mapping[str, StoredCall]:
         """Stored calls keyed by external id. Ids with no call are absent."""
 
+    async def find_turns(self, external_ids: Collection[str]) -> Mapping[str, Mapping[int, str]]:
+        """Each listed call's stored turns as idx -> text. Calls with no turns are absent."""
+
     async def save_results(self, calls: Sequence[ScoredCall]) -> None:
-        """Write the new step results and call totals."""
+        """Write the new step results (with their evidence) and call totals."""
 
 
 class Clock(Protocol):
