@@ -4,6 +4,7 @@ import pytest
 
 from app.domain.call_detail import (
     CallNotFound,
+    CallRecord,
     ComparisonRow,
     StepStatus,
     _in_order,
@@ -24,6 +25,7 @@ from app.domain.call_detail import (
     SubCheck,
     TransferMoneyDetails,
     TurnRecord,
+    build_call_detail,
     evidence_for,
     flags,
     notes_by_turn,
@@ -261,6 +263,13 @@ def test_coaching_for_drops_coaching_on_completed_and_under_review_steps():
         assert coaching_for(StepRecord("a", 1, "A", 10, status, coaching="Next time ...")) is None
 
 
+def test_build_call_detail_puts_coaching_only_on_the_wrong_step():
+    call = transfer_money_call()
+    steps = tuple(replace(s, coaching="Stray tip.") if s.status == "completed" else s for s in call.steps)
+    detail = build_call_detail(replace(call, steps=steps))
+    assert [s.coaching is not None for s in detail.steps] == [False, False, False, False, True, False, False]
+
+
 # --- private helpers -------------------------------------------------------------------------------------------------
 
 def test_require_accepts_an_allowed_value():
@@ -288,6 +297,51 @@ def test_type_details_is_an_empty_block_naming_an_unknown_type():
 
 def test_type_details_uses_the_transfer_money_builder():
     assert isinstance(type_details(transfer_money_call()), TransferMoneyDetails)
+
+
+# --- build_call_detail -----------------------------------------------------------------------------------------------
+
+def test_build_call_detail_returns_every_value_on_the_mock():
+    detail = build_call_detail(transfer_money_call())
+    assert detail.header.call_type_name == "Transfer money"
+    assert detail.header.external_id == "a2f086d27b3a4f96"
+    assert detail.score.score == 45
+    assert len(detail.transcript) == 16
+    turn9 = detail.transcript[8]
+    assert (turn9.turn.idx, turn9.turn.start_seconds) == (9, 33.53)
+    assert turn9.notes[0].kind == "wrong"
+    submit = detail.steps[4]
+    assert submit.evidence == Evidence("okay and that was from your savings to your checking account", 9, 33.53)
+    assert [c.points for c in submit.step.sub_checks] == [40, 15]
+    assert submit.step.coaching.startswith("Next time")
+    assert submit.step.description.startswith("Log the transfer correctly")
+    assert len(detail.flags) == 1
+    assert detail.flags[0].message == "Moved $114 savings → checking. The caller asked for checking → savings."
+    assert [r.result for r in detail.type_details.fields] == ["match", "reversed", "reversed"]
+
+
+def test_build_call_detail_without_mistakes_has_no_flags_or_wrong_notes():
+    detail = build_call_detail(check_balance_call())
+    assert detail.flags == ()
+    assert not any(n.kind == "wrong" for t in detail.transcript for n in t.notes)
+    assert detail.score.score == 100
+    assert detail.type_details == EmptyDetails("check_balance")
+
+
+def test_build_call_detail_for_a_pending_call():
+    call = CallRecord(9, "x", "pay_bill", "Pay bill", None, turns=(TurnRecord(1, "agent", 0.5, "hello"),))
+    detail = build_call_detail(call)
+    assert detail.score.score is None
+    assert detail.steps == () and detail.flags == ()
+    assert detail.transcript[0].notes == ()
+
+
+def test_build_call_detail_orders_steps_and_turns():
+    call = transfer_money_call()
+    shuffled = replace(call, steps=tuple(reversed(call.steps)), turns=tuple(reversed(call.turns)))
+    detail = build_call_detail(shuffled)
+    assert [s.step.position for s in detail.steps] == list(range(1, 8))
+    assert [t.turn.idx for t in detail.transcript] == list(range(1, 17))
 
 
 # --- records and errors ----------------------------------------------------------------------------------------------

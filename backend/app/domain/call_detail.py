@@ -357,3 +357,18 @@ def type_details(record: CallRecord) -> TypeDetails:
     """The block for this call type. A type without a builder gets an empty block that still names it."""
     build = TYPE_DETAIL_BUILDERS.get(record.call_type)
     return build(record) if build else EmptyDetails(record.call_type)
+
+
+def build_call_detail(record: CallRecord) -> CallDetail:
+    """Everything the call detail screen shows, worked out from one stored call."""
+    steps = _in_order(record.steps)
+    turns = tuple(sorted(record.turns, key=lambda t: t.idx))
+    notes = notes_by_turn(steps)
+    return CallDetail(
+        header=CallHeader(record.id, record.external_id, record.call_type, record.call_type_name, record.summary),
+        score=summarize_score(steps),
+        transcript=tuple(TranscriptTurn(t, notes.get(t.idx, ())) for t in turns),
+        steps=tuple(StepDetail(s, evidence_for(s, turns), coaching_for(s)) for s in steps),
+        flags=flags(steps, record.call_type),
+        type_details=type_details(record),
+    )
