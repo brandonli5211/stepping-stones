@@ -145,16 +145,28 @@ Stepping Stones is a post-call coaching tool for contact-centre agents. Feedback
 
 ## Dataset
 
-**Suggested owner:** [Someone write this] 
+**Owner:** Ozan
 
-**How to fill this in:** what HarperValleyBank already gives us, and what we add.
+The calls come from [HarperValleyBank](https://github.com/cricketclub/gridspace-stanford-harper-valley). It has 1,446 phone calls (about 23 hours) to a made-up bank. **The calls are role-play:** each caller is given a task, such as moving money or replacing a card, and acts it out with an agent. They are not real customers. There are eight task types: check balance, transfer money, replace card, order checks, pay bill, reset password, schedule appointment, and get branch hours.
 
-- It gives task type, agent id, separate agent and customer turns, and what the agent logged.
-- We add the template, the checker, the score, and the screen.
-- Say that the calls are role-play, and cite Wu et al. 2020, arXiv:2010.13929, CC BY 4.0.
-- Dataset: https://github.com/cricketclub/gridspace-stanford-harper-valley
+**What HarperValleyBank gives us,** in two JSON files per call:
 
-_Replace this list with your version._
+- `transcript/<id>.json`: every turn, with who spoke (agent or caller), the human-corrected text and the speech-recognition text, and when each turn starts.
+- `metadata/<id>.json`: the agent's name and id, the call times, the task the caller was given (`tasks`, what the caller asked for), and what the agent logged in the bank's form (`agent.responses`).
+
+It does not say which required steps the agent did, missed, or got wrong, and it has no scores.
+
+**What we add:**
+
+- A template for each task type ([docs/procedures/schema3](docs/procedures/schema3)): the required steps, their points, and how each one is checked.
+- Hand-labelled step results for 48 demo calls in [sample/demo_48/results.csv](sample/demo_48/results.csv), next to the matching HarperValleyBank files. Each row gives one call's type, a demo date and time, and the steps that were missed or done wrong. Every other step counts as completed. These are made-up results so the screens have data in Sprint 1. The model analyser replaces them later. The app works out scores and percentages from these step results. None are typed in.
+- Demo dates: the dataset's calls are from 2020, so the demo calls get dates in the eight weeks before the demo.
+
+Load the demo data with `uv run python -m app.load_calls ../sample/demo_48 --demo-results`, then `uv run apply-demo-results ../sample/demo_48/results.csv` (see [Backend on the host](#backend-on-the-host-optional)).
+
+**Citation and license.** HarperValleyBank is released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The transcript and metadata files under `sample/` are a subset of it.
+
+> Mike Wu, Jonathan Nafziger, Anthony Scodary, and Andrew Maas. 2020. *HarperValleyBank: A Domain-Specific Spoken Dialog Corpus.* arXiv:2010.13929. https://arxiv.org/abs/2010.13929
 
 ## How we work
 
