@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from app.adapters.files.prompt_template import JsonPromptTemplate
+from app.adapters.files.shared_steps import JsonSharedSteps
 from app.adapters.llm.ollama import OllamaModel, normalize_host
 
 DEFAULT_RULES_DIR = Path(__file__).resolve().parents[3] / "docs" / "procedures" / "schema3"
@@ -20,3 +21,8 @@ def analysis_adapters_from_env(environ: Mapping[str, str]) -> tuple[JsonPromptTe
         timeout=float(environ.get("OLLAMA_TIMEOUT", "600")),
     )
     return template, model
+
+
+def shared_steps_from_env(environ: Mapping[str, str]) -> JsonSharedSteps:
+    """The source of the steps every call type has, from the same RULES_DIR as the prompt template."""
+    return JsonSharedSteps(Path(environ.get("RULES_DIR") or DEFAULT_RULES_DIR))
