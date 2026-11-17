@@ -36,6 +36,41 @@ const SAMPLE: Record<string, unknown> = {
       },
     ],
   },
+  // same shape as GET /progress. every number and sentence is typed in, the server writes those, not us
+  "/progress": {
+    demo_data: true,
+    weeks: [
+      { week_start: "2026-08-17", steps_completed: 16, steps_total: 25, percent: 64, is_current: false },
+      { week_start: "2026-08-24", steps_completed: 16, steps_total: 23, percent: 70, is_current: false },
+      { week_start: "2026-08-31", steps_completed: 17, steps_total: 25, percent: 68, is_current: false },
+      { week_start: "2026-09-07", steps_completed: 24, steps_total: 32, percent: 75, is_current: false },
+      { week_start: "2026-09-14", steps_completed: 45, steps_total: 56, percent: 80, is_current: false },
+      { week_start: "2026-09-21", steps_completed: 31, steps_total: 39, percent: 79, is_current: false },
+      { week_start: "2026-09-28", steps_completed: 19, steps_total: 22, percent: 86, is_current: false },
+      { week_start: "2026-10-05", steps_completed: 35, steps_total: 39, percent: 90, is_current: true },
+    ],
+    this_week: { steps_completed: 35, steps_total: 39, percent: 90 },
+    first_week_percent: 64,
+    comparison: "Up from 64% in week 1",
+    call_types: [
+      { call_type: "replace_card", name: "Replace card", steps_completed: 3, steps_total: 4, percent: 75, calls: 1 },
+      { call_type: "transfer_money", name: "Transfer money", steps_completed: 3, steps_total: 4, percent: 75, calls: 1 },
+    ],
+    steps: [
+      {
+        step_key: "confirm_ordered", name: "Confirm ordered", call_type: "replace_card", label: "Replace card",
+        results: ["missed"], misses: 1, window: 1, summary: "Missed on your last replace-card call",
+      },
+      {
+        step_key: "submit", name: "Submit and confirm", call_type: "transfer_money", label: "Transfer money",
+        results: ["wrong"], misses: 1, window: 1, summary: "Missed on your last transfer-money call",
+      },
+      {
+        step_key: "greet", name: "Greet and open", call_type: null, label: "All call types",
+        results: ["completed", "completed"], misses: 0, window: 2, summary: "Done on all of your last 2 calls",
+      },
+    ],
+  },
 };
 
 // sample mode answers from SAMPLE, otherwise it's a plain fetch to the api
@@ -43,8 +78,10 @@ export function createApiGateway(opts: { apiUrl: string; sampleData: boolean; fe
   return {
     async get<T>(path: string): Promise<T> {
       if (opts.sampleData) {
-        if (!(path in SAMPLE)) throw new Error(`no sample data for ${path}`);
-        return structuredClone(SAMPLE[path]) as T;
+        // the sample is the same whatever the query string asks for
+        const key = path.split("?")[0];
+        if (!(key in SAMPLE)) throw new Error(`no sample data for ${path}`);
+        return structuredClone(SAMPLE[key]) as T;
       }
       const res = await (opts.fetchImpl ?? fetch)(`${opts.apiUrl}${path}`);
       if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);

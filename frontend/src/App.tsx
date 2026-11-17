@@ -2,8 +2,10 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { resolveShellView } from "./application";
 import { createApiGateway } from "./gateway";
 import { Card, CardContent } from "./components/ui/card";
-import { PageHeader, ScoreRing, StateMessage, StatusLegend, Stone, StoneSprite } from "./components/pieces";
+import { PageHeader, StateMessage, StatusLegend, Stone, StoneSprite } from "./components/pieces";
 import CallsPage from "./CallsPage.jsx";
+import { createProgressScreen, parseAgentId } from "./progress/compose";
+import ProgressPage from "./progress/ProgressPage";
 
 // all the env stuff gets read here and nowhere else
 const api = createApiGateway({
@@ -11,13 +13,11 @@ const api = createApiGateway({
   sampleData: import.meta.env.VITE_SAMPLE_DATA === "true",
 });
 const agentSettings = { name: import.meta.env.VITE_AGENT_NAME, role: import.meta.env.VITE_AGENT_ROLE };
-
-type ThisWeek = { steps_completed: number; steps_total: number; percent: number | null } | null;
+// the progress screen's parts, built once: the page draws the view model and calls the controller
+const progress = createProgressScreen(api, parseAgentId(import.meta.env.VITE_AGENT_ID));
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
-  const [week, setWeek] = useState<{ value: ThisWeek } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const view = resolveShellView(path, agentSettings);
 
   // back/forward buttons
@@ -26,16 +26,6 @@ export default function App() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-
-  // progress is the only placeholder that loads anything for now
-  useEffect(() => {
-    if (view.screen.id !== "progress") return;
-    setError(null);
-    api.get<{ summary: { this_week: ThisWeek } }>("/calls").then(
-      (d) => setWeek({ value: d.summary.this_week }),
-      (e: Error) => setError(e.message),
-    );
-  }, [view.screen.id]);
 
   // grab clicks on our own links so the page doesn't do a full reload
   const onClick = (e: MouseEvent) => {
@@ -86,29 +76,7 @@ export default function App() {
           </>
         )}
 
-        {view.screen.id === "progress" && (
-          <>
-            <PageHeader title={view.screen.title} subtitle="How your required steps change week by week." />
-            <Card>
-              <CardContent className="flex items-center gap-6">
-                {error ? (
-                  <StateMessage kind="error" title="Couldn't load your week" message={error} />
-                ) : (
-                  <>
-                    <ScoreRing value={week?.value?.percent ?? null} />
-                    <div>
-                      <p className="text-xs text-muted">This week</p>
-                      <p className="text-xl font-semibold">
-                        {week?.value ? `${week.value.steps_completed} of ${week.value.steps_total} required steps completed` : "No analysed calls this week"}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-            <div className="mt-6"><StatusLegend /></div>
-          </>
-        )}
+        {view.screen.id === "progress" && <ProgressPage viewModel={progress.viewModel} controller={progress.controller} />}
 
         {view.screen.id === "procedures" && (
           <>
