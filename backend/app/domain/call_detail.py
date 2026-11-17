@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from typing import Literal, get_args
 
 Speaker = Literal["agent", "caller"]
@@ -265,4 +266,94 @@ def coaching_for(step: StepRecord) -> str | None:
     return step.coaching if step.status in ("missed", "wrong") else None
 
 
-FLAG_MESSAGE_BUILDERS: Mapping[str, Callable[[StepRecord], str | None]] = {}
+TRANSFER_FIELD_LABELS: Mapping[str, str] = {
+    "transfer_amount": "Amount",
+    "transfer_source_account": "From",
+    "transfer_destination_account": "To",
+}
+
+
+AMOUNT, SOURCE, DESTINATION = TRANSFER_FIELD_LABELS
+
+
+def _same(a: str | None, b: str | None) -> bool:
+    """Two stored values name the same thing (ignoring case and surrounding spaces). Missing never matches."""
+    return a is not None and b is not None and a.strip().lower() == b.strip().lower()
+
+
+def accounts_reversed(source: ComparisonRow | None, destination: ComparisonRow | None) -> bool:
+    """The agent logged the caller's two accounts the wrong way round: logged From is the asked To and the reverse."""
+    return (
+        source is not None and destination is not None
+        and not _same(source.caller_asked, destination.caller_asked)
+        and _same(source.logged, destination.caller_asked)
+        and _same(destination.logged, source.caller_asked)
+    )
+
+
+def _result(row: ComparisonRow, reversed_: bool) -> Literal["match", "mismatch", "reversed"]:
+    if row.match:
+        return "match"
+    return "reversed" if reversed_ else "mismatch"
+
+
+def transfer_money_details(record: CallRecord) -> TransferMoneyDetails:
+    """The Caller asked / Logged / Result table, from the comparison rows stored on the steps: Amount, From, To.
+    From and To are both `reversed` when the accounts were swapped."""
+    rows = {r.field: r for s in record.steps for r in s.comparison if r.field in TRANSFER_FIELD_LABELS}
+    swapped = accounts_reversed(rows.get(SOURCE), rows.get(DESTINATION))
+    return TransferMoneyDetails(tuple(
+        FieldRow(key, label, rows[key].caller_asked, rows[key].logged,
+                 _result(rows[key], swapped and key in (SOURCE, DESTINATION)))
+        for key, label in TRANSFER_FIELD_LABELS.items()
+        if key in rows
+    ))
+
+
+def _money(value: str) -> str:
+    """'114' → '$114', '146.00' → '$146', '12.5' → '$12.50'. Anything that is not a number is kept as it is."""
+    try:
+        amount = Decimal(value.strip())
+    except InvalidOperation:
+        return value
+    return f"${amount:.0f}" if amount == amount.to_integral_value() else f"${amount:.2f}"
+
+
+def transfer_flag_message(step: StepRecord) -> str | None:
+    """'Moved $114 savings → checking. The caller asked for checking → savings.' from the step's field table.
+    None when the table is incomplete or everything matches, so the step's own reason is used instead."""
+    rows = {r.field: r for r in step.comparison}
+    if not all(key in rows for key in TRANSFER_FIELD_LABELS) or all(r.match for r in rows.values()):
+        return None
+    amount, source, destination = rows[AMOUNT], rows[SOURCE], rows[DESTINATION]
+    if any(r.caller_asked is None for r in (amount, source, destination)):
+        return None
+    logged = (amount.logged, source.logged, destination.logged)
+    if all(v is None for v in logged):
+        return (f"Nothing was logged. The caller asked for {_money(amount.caller_asked)} "
+                f"{source.caller_asked} → {destination.caller_asked}.")
+    if any(v is None for v in logged):
+        parts = (f"amount {_money(amount.logged) if amount.logged is not None else 'not logged'}",
+                 f"from {source.logged or 'not logged'}",
+                 f"to {destination.logged or 'not logged'}")
+        return (f"Logged {', '.join(parts)}. The caller asked for {_money(amount.caller_asked)} "
+                f"{source.caller_asked} → {destination.caller_asked}.")
+    asked_amount = "" if amount.match else f"{_money(amount.caller_asked)} "
+    return (f"Moved {_money(amount.logged)} {source.logged} → {destination.logged}. "
+            f"The caller asked for {asked_amount}{source.caller_asked} → {destination.caller_asked}.")
+
+
+FLAG_MESSAGE_BUILDERS: Mapping[str, Callable[[StepRecord], str | None]] = {
+    "transfer_money": transfer_flag_message,
+}
+
+
+TYPE_DETAIL_BUILDERS: Mapping[str, Callable[[CallRecord], TypeDetails]] = {
+    "transfer_money": transfer_money_details,
+}
+
+
+def type_details(record: CallRecord) -> TypeDetails:
+    """The block for this call type. A type without a builder gets an empty block that still names it."""
+    build = TYPE_DETAIL_BUILDERS.get(record.call_type)
+    return build(record) if build else EmptyDetails(record.call_type)

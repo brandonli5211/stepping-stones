@@ -1,21 +1,35 @@
+from dataclasses import replace
+
 import pytest
 
 from app.domain.call_detail import (
     CallNotFound,
+    ComparisonRow,
     StepStatus,
     _in_order,
+    _money,
     _require,
+    _result,
+    _same,
+    accounts_reversed,
     coaching_for,
+    transfer_flag_message,
+    EmptyDetails,
     Evidence,
+    FieldRow,
+    Flag,
     InvalidCallRecord,
     Note,
     StepRecord,
     SubCheck,
+    TransferMoneyDetails,
     TurnRecord,
     evidence_for,
     flags,
     notes_by_turn,
     summarize_score,
+    transfer_money_details,
+    type_details,
 )
 from call_detail_fixtures import check_balance_call, transfer_money_call
 
@@ -92,6 +106,13 @@ def test_notes_by_turn_falls_back_to_the_step_name_without_a_detail():
 
 # --- flags -----------------------------------------------------------------------------------------------------------
 
+def test_flags_lists_the_wrong_submit_step_with_its_message():
+    assert flags(transfer_money_call().steps, "transfer_money") == (
+        Flag("submit_and_confirm_transfer", "Submit and confirm transfer", "wrong", "critical", 55,
+             "Moved $114 savings → checking. The caller asked for checking → savings."),
+    )
+
+
 def test_flags_falls_back_to_the_step_detail_for_other_types():
     steps = (StepRecord("a", 1, "A", 10, "wrong", points_lost=5, detail="Said the wrong balance."),)
     assert flags(steps, "check_balance")[0].message == "Said the wrong balance."
@@ -134,6 +155,99 @@ def test_evidence_for_keeps_the_quote_when_the_turn_has_no_time():
     assert evidence_for(step, turns) == Evidence("hello", 1, None)
 
 
+# --- type details ----------------------------------------------------------------------------------------------------
+
+def test_transfer_money_details_builds_the_field_table_with_reversed_accounts():
+    assert transfer_money_details(transfer_money_call()) == TransferMoneyDetails((
+        FieldRow("transfer_amount", "Amount", "114", "114", "match"),
+        FieldRow("transfer_source_account", "From", "checking", "savings", "reversed"),
+        FieldRow("transfer_destination_account", "To", "savings", "checking", "reversed"),
+    ))
+
+
+def test_transfer_money_details_says_mismatch_when_not_a_swap():
+    rows = (ComparisonRow("transfer_amount", "114", "100", False),
+            ComparisonRow("transfer_source_account", "checking", "savings", False),
+            ComparisonRow("transfer_destination_account", "savings", "savings", True))
+    call = replace(transfer_money_call(), steps=(StepRecord("s", 1, "S", 55, "wrong", points_lost=40, comparison=rows),))
+    assert [r.result for r in transfer_money_details(call).fields] == ["mismatch", "mismatch", "match"]
+
+
+# --- reversed accounts and flag messages -----------------------------------------------------------------------------
+
+def test_accounts_reversed_spots_a_swap():
+    src = ComparisonRow("transfer_source_account", "checking", "savings", False)
+    dst = ComparisonRow("transfer_destination_account", "savings", "checking", False)
+    assert accounts_reversed(src, dst) is True
+
+
+def test_accounts_reversed_is_false_for_other_cases():
+    src = ComparisonRow("transfer_source_account", "checking", "checking", True)
+    dst = ComparisonRow("transfer_destination_account", "savings", "savings", True)
+    same_both = ComparisonRow("transfer_destination_account", "checking", "checking", True)
+    assert accounts_reversed(src, dst) is False
+    assert accounts_reversed(src, None) is False
+    assert accounts_reversed(src, same_both) is False  # caller asked checking → checking: nothing to swap
+
+
+def test_transfer_flag_message_describes_the_swap():
+    submit = transfer_money_call().steps[4]
+    assert transfer_flag_message(submit) == "Moved $114 savings → checking. The caller asked for checking → savings."
+
+
+def test_transfer_flag_message_adds_the_asked_amount_when_it_differs():
+    rows = (ComparisonRow("transfer_amount", "114", "146.00", False),
+            ComparisonRow("transfer_source_account", "checking", "checking", True),
+            ComparisonRow("transfer_destination_account", "savings", "savings", True))
+    step = StepRecord("s", 1, "S", 55, "wrong", points_lost=35, comparison=rows)
+    assert transfer_flag_message(step) == "Moved $146 checking → savings. The caller asked for $114 checking → savings."
+
+
+def test_transfer_flag_message_says_when_nothing_was_logged():
+    rows = (ComparisonRow("transfer_amount", "78", None, False),
+            ComparisonRow("transfer_source_account", "checking", None, False),
+            ComparisonRow("transfer_destination_account", "savings", None, False))
+    step = StepRecord("s", 1, "S", 55, "wrong", points_lost=35, comparison=rows)
+    assert transfer_flag_message(step) == "Nothing was logged. The caller asked for $78 checking → savings."
+
+
+def test_transfer_flag_message_lists_what_was_partly_logged():
+    rows = (ComparisonRow("transfer_amount", "114", "114", True),
+            ComparisonRow("transfer_source_account", "checking", None, False),
+            ComparisonRow("transfer_destination_account", "savings", "checking", False))
+    step = StepRecord("s", 1, "S", 55, "wrong", points_lost=35, comparison=rows)
+    assert transfer_flag_message(step) == ("Logged amount $114, from not logged, to checking. "
+                                           "The caller asked for $114 checking → savings.")
+
+
+def test_transfer_flag_message_is_none_when_everything_matches_or_rows_are_missing():
+    rows = tuple(replace(r, match=True) for r in transfer_money_call().steps[4].comparison)
+    assert transfer_flag_message(StepRecord("s", 1, "S", 55, "wrong", points_lost=5, comparison=rows)) is None
+    assert transfer_flag_message(StepRecord("s", 1, "S", 55, "wrong", points_lost=5, comparison=rows[:2])) is None
+    unasked = (replace(rows[0], match=False, caller_asked=None),) + rows[1:]
+    assert transfer_flag_message(StepRecord("s", 1, "S", 55, "wrong", points_lost=5, comparison=unasked)) is None
+
+
+def test_money_formats_amounts():
+    assert _money("114") == "$114"
+    assert _money("146.00") == "$146"
+    assert _money("12.5") == "$12.50"
+    assert _money("a lot") == "a lot"
+
+
+def test_same_ignores_case_and_spaces_but_not_missing_values():
+    assert _same(" Checking", "checking") is True
+    assert _same("checking", "savings") is False
+    assert _same(None, None) is False
+
+
+def test_result_picks_match_mismatch_or_reversed():
+    row = ComparisonRow("f", "a", "b", False)
+    assert _result(row, True) == "reversed"
+    assert _result(row, False) == "mismatch"
+    assert _result(replace(row, match=True), True) == "match"
+
+
 # --- coaching --------------------------------------------------------------------------------------------------------
 
 def test_coaching_for_keeps_coaching_on_missed_and_wrong_steps():
@@ -161,6 +275,19 @@ def test_require_names_the_bad_value():
 def test_in_order_sorts_steps_by_position():
     a, b = StepRecord("a", 2, "A", 5, "completed"), StepRecord("b", 1, "B", 5, "completed")
     assert _in_order((a, b)) == (b, a)
+
+
+def test_transfer_money_details_is_empty_without_comparison_rows():
+    call = replace(transfer_money_call(), steps=())
+    assert transfer_money_details(call) == TransferMoneyDetails(())
+
+
+def test_type_details_is_an_empty_block_naming_an_unknown_type():
+    assert type_details(check_balance_call()) == EmptyDetails("check_balance")
+
+
+def test_type_details_uses_the_transfer_money_builder():
+    assert isinstance(type_details(transfer_money_call()), TransferMoneyDetails)
 
 
 # --- records and errors ----------------------------------------------------------------------------------------------
