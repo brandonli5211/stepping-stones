@@ -1,0 +1,39 @@
+{
+  "source": {
+    "dataset": "Harper Valley Bank",
+    "call_sid": "0002f70f7386445b",
+    "metadata_path": "sample/calls_sample_56/metadata/0002f70f7386445b.json",
+    "transcript_path": "sample/calls_sample_56/transcript/0002f70f7386445b.json"
+  },
+  "call_id": "0002f70f7386445b",
+  "procedure_id": "replace_card",
+  "task_id": "replace_card",
+  "current_step": {
+    "id": "greet_and_open",
+    "objective": "State the bank name and the agent's own name, then ask how the agent can help.",
+    "evidence_requirements": [
+      "Name Harper Valley National Bank.",
+      "Give the agent's own name.",
+      "Ask how the agent can help."
+    ],
+    "acceptable_variants": [
+      "A greeting may span consecutive agent transcript turns.",
+      "The help question may be phrased naturally."
+    ],
+    "exclusions": [
+      "Do not credit a caller's introduction as the agent's name.",
+      "Do not infer omitted greeting parts from call metadata."
+    ]
+  },
+  "agent_turn_window": {
+    "turn_ids": [1, 2, 3],
+    "agent_turn": "hello this is harper valley national bank\nmy name is elizabeth\nhow can i help you today",
+    "surrounding_context": [],
+    "contradictory_evidence": false
+  },
+  "call_cursor": {
+    "expected_step_index": 0,
+    "agent_turn_index": 1,
+    "call_ended": false
+  }
+}

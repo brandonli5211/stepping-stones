@@ -50,6 +50,15 @@ docker compose down              # stop everything
 docker compose down -v           # manual wipe of volumes, not the schema step
 ```
 
+## OpenAI Decisions configuration
+
+The ordered step evaluator uses OpenAI Decisions only when its outer adapter is
+wired into a call-processing workflow. Set `OPENAI_API_KEY` in your shell,
+deployment secret manager, or untracked `.env` file. You may set
+`OPENAI_BASE_URL` for an API-compatible endpoint; it otherwise uses
+`https://api.openai.com`. Never commit either a real API key or an exported
+environment file containing one.
+
 ## Troubleshooting
 
 - **Port 8000 already allocated:** copy `.env.example` to `.env`, set `BACKEND_PORT=8001`, then run `docker compose up --build` again. The frontend follows automatically, and the API is then at http://localhost:8001/docs.
