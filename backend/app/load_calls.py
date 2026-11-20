@@ -3,7 +3,7 @@
     uv run python -m app.load_calls <folder with transcript/ and metadata/> [--spread-days 42] [--demo-results]
 
 Fills: procedures (from docs/procedures/schema3), agents, calls, call_turns. Uses DATABASE_URL.
-Run it again any time: procedures are updated, calls already loaded (same external_id) are skipped.
+Run it again any time: the version in each procedure file becomes the active one, calls already loaded (same external_id) are skipped.
 
 By default only what is in the files is stored: calls are inserted with status 'pending' (no score, no steps).
 --demo-results also fills call_steps and the score from simple rules, WITHOUT a model (see call_parse.seed_steps):
@@ -26,10 +26,15 @@ from app.call_parse import parse_call, seed_steps
 
 DEFAULT_RULES = Path(__file__).resolve().parents[2] / "docs" / "procedures" / "schema3"
 
+DEACTIVATE_OTHER_VERSIONS = """
+UPDATE procedures SET is_active = false
+WHERE call_type = %s AND version <> %s AND is_active
+"""
+# An existing version keeps its rules: older calls were scored against them.
 UPSERT_PROCEDURE = """
 INSERT INTO procedures (call_type, version, name, rules, is_active)
 VALUES (%s, %s, %s, %s, true)
-ON CONFLICT (call_type, version) DO UPDATE SET name = EXCLUDED.name, rules = EXCLUDED.rules
+ON CONFLICT (call_type, version) DO UPDATE SET is_active = true
 RETURNING id
 """
 FIND_AGENT = "SELECT id FROM agents WHERE name = %s ORDER BY id LIMIT 1"
@@ -57,6 +62,13 @@ INSERT INTO call_steps (call_id, step_key, position, name, points, status, sever
                         points_under_review, detail, sub_checks, comparison)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
+
+
+def upsert_procedure(cur, doc: dict) -> int:
+    """Make this version the only active one for its call type and return its id."""
+    cur.execute(DEACTIVATE_OTHER_VERSIONS, (doc["call_type"], doc["version"]))
+    cur.execute(UPSERT_PROCEDURE, (doc["call_type"], doc["version"], doc["name"], Jsonb(doc)))
+    return cur.fetchone()[0]
 
 
 def read_pairs(folder: Path) -> list[dict]:
@@ -88,8 +100,7 @@ def load(conn, folder: Path, rules_dir: Path = DEFAULT_RULES, spread_days: int |
             if path.name.startswith("_"):
                 continue
             doc = json.loads(path.read_text(encoding="utf-8"))
-            cur.execute(UPSERT_PROCEDURE, (doc["call_type"], doc["version"], doc["name"], Jsonb(doc)))
-            procedures[doc["call_type"]] = (cur.fetchone()[0], doc)
+            procedures[doc["call_type"]] = (upsert_procedure(cur, doc), doc)
 
         calls = read_pairs(folder)
         if spread_days:
