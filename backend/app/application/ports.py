@@ -83,6 +83,11 @@ class PromptTemplateSource(Protocol):
         """The shared prompt template and field types. Raises RulesUnavailable."""
 
 
+class SharedStepsSource(Protocol):
+    async def load(self) -> frozenset[str]:
+        """The keys of the steps every call type has. Raises RulesUnavailable."""
+
+
 class LanguageModel(Protocol):
     async def ask(self, prompt: str, model: str | None) -> tuple[str, str]:
         """(model name, answer text). Raises ModelUnavailable."""

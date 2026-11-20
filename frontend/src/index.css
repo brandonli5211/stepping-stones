@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* same colors the calls page already uses (styles.css), so everything matches */
+@theme {
+  --color-brand: #3d6b7a;
+  --color-brand-soft: #d9e6ea;
+  --color-page: #f5fbf6;
+  --color-ink: #1d2b2f;
+  --color-muted: #5d6b6f;
+  --color-good: #2fbf6a;
+  --color-bad: #c0392b;
+  --color-bad-soft: #fdecea;
+  --color-review: #9aa7ab;
+}
