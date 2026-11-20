@@ -1,0 +1,57 @@
+sid,call_type,turns,what_to_look_for,tags
+0091a706bc604188,check_balance,17,clean: logged values match assigned,balance_stated log_ok
+7306f4f9ef6d4440,check_balance,12,clean: logged values match assigned,balance_stated log_ok
+b732044bde7c45f3,check_balance,12,agent never states the assigned balance; no thank-you / goodbye at the end; agent never asks if anything else is needed; agent submitted more than once (last counts); agent logged a different task type than assigned,balance_not_stated no_close no_offer_help resubmitted wrong_task_type
+c3b701fb74bb4472,check_balance,63,long call (40+ turns); agent submitted more than once (last counts),balance_stated log_ok long resubmitted
+ed1ffdb4249e4c73,check_balance,16,no greeting naming the bank,balance_stated log_ok no_greeting
+fb0907e0edbc4b15,check_balance,32,agent never states the assigned balance; agent logged nothing,balance_not_stated no_log
+fc66c1a1c15546c7,check_balance,9,short call (10 turns or fewer),balance_stated log_ok short
+0126ffdce48049a9,get_branch_hours,24,agent says 9:30 (assigned is 8:30),hours_930 log_ok
+30fa4bafacd24a47,get_branch_hours,8,agent says 9:30 (assigned is 8:30); short call (10 turns or fewer),hours_930 log_ok short
+337791eb84d345a8,get_branch_hours,3,agent states neither 8:30 nor 9:30; no thank-you / goodbye at the end; no greeting naming the bank; agent logged nothing; agent never asks if anything else is needed; short call (10 turns or fewer),hours_other no_close no_greeting no_log no_offer_help short
+52d6f52ab444442a,get_branch_hours,9,agent says 9:30 (assigned is 8:30); short call (10 turns or fewer),hours_930 log_ok short
+907e2a39de0440c4,get_branch_hours,10,agent says 9:30 (assigned is 8:30); short call (10 turns or fewer),hours_930 log_ok short
+b5f55c1e289a44b5,get_branch_hours,17,agent says 9:30 (assigned is 8:30); agent submitted more than once (last counts),hours_930 log_ok resubmitted
+c775d3f5dc5a4978,get_branch_hours,7,agent says 9:30 (assigned is 8:30); short call (10 turns or fewer),hours_930 log_ok short
+02e41649e7c441fd,order_checks,27,clean: logged values match assigned,log_ok
+2ee2ac9dcf6e4e8e,order_checks,25,logged home_address differs from assigned; no thank-you / goodbye at the end; agent never asks if anything else is needed,logged_wrong:home_address no_close no_offer_help
+5789b1eabc284dad,order_checks,41,long call (40+ turns); agent logged nothing,long no_log
+7d9594d33a65436f,order_checks,14,clean: logged values match assigned,log_ok
+b73ee827c2794c29,order_checks,27,agent submitted more than once (last counts),log_ok resubmitted
+f8e6c0649176495d,order_checks,7,short call (10 turns or fewer); agent logged a different task type than assigned,short wrong_task_type
+fb980cb8c7694f3f,order_checks,18,logged home_address differs from assigned; no greeting naming the bank,logged_wrong:home_address no_greeting
+034a32d3b6e4435a,pay_bill,26,clean: logged values match assigned,log_ok
+4736468478334726,pay_bill,10,no thank-you / goodbye at the end; agent logged nothing; agent never asks if anything else is needed; short call (10 turns or fewer),no_close no_log no_offer_help short
+5dcf0d4256e04c2a,pay_bill,24,clean: logged values match assigned,log_ok
+b0d63ed287c04649,pay_bill,17,no thank-you / goodbye at the end; agent never asks if anything else is needed; agent submitted more than once (last counts); agent logged a different task type than assigned,no_close no_offer_help resubmitted wrong_task_type
+b163bc57c2f04245,pay_bill,22,clean: logged values match assigned,log_ok
+c029585f654642b1,pay_bill,51,logged company_address differs from assigned; logged company_name differs from assigned; logged money_amount differs from assigned; long call (40+ turns),logged_wrong:company_address logged_wrong:company_name logged_wrong:money_amount long
+ce135386e8494370,pay_bill,25,no greeting naming the bank,log_ok no_greeting
+0002f70f7386445b,replace_card,18,clean: logged values match assigned,log_ok
+429488b9c8934443,replace_card,34,no thank-you / goodbye at the end; agent logged a different task type than assigned,no_close wrong_task_type
+79217a3dbe5945dc,replace_card,20,logged replacement_card_type differs from assigned,logged_wrong:replacement_card_type
+8e5f2787249d463f,replace_card,20,logged replacement_card_type is missing; agent never asks if anything else is needed,logged_wrong:replacement_card_type:missing no_offer_help
+9550d3827fea460d,replace_card,26,agent submitted more than once (last counts),log_ok resubmitted
+c0a7af7222e64ea3,replace_card,10,agent logged nothing; short call (10 turns or fewer),no_log short
+c9e2d32aa8f24b71,replace_card,12,no greeting naming the bank,log_ok no_greeting
+01cefd6f5c044a6f,reset_password,17,clean: logged values match assigned,log_ok
+64bdc900eec44b3f,reset_password,16,no greeting naming the bank; agent logged a different task type than assigned,no_greeting wrong_task_type
+72da2d85ddbd4a4d,reset_password,13,clean: logged values match assigned,log_ok
+8335c1916f0f4a52,reset_password,13,no thank-you / goodbye at the end; agent logged nothing; agent never asks if anything else is needed,no_close no_log no_offer_help
+965c363674ad4915,reset_password,76,logged phone differs from assigned; long call (40+ turns),logged_wrong:phone long
+d47bbdf16dce4e0b,reset_password,23,agent submitted more than once (last counts),log_ok resubmitted
+e4e166441e084f0d,reset_password,9,short call (10 turns or fewer),log_ok short
+010eaccb7a23436f,schedule_appointment,29,clean: logged values match assigned,log_ok
+5c1d9f2e72974bdd,schedule_appointment,19,logged day differs from assigned; no greeting naming the bank,logged_wrong:day no_greeting
+86d619fb1bfe45e4,schedule_appointment,28,agent submitted more than once (last counts); agent logged a different task type than assigned,resubmitted wrong_task_type
+b9f2e4b1237e4420,schedule_appointment,23,agent logged nothing,no_log
+ce3584cb105b4b66,schedule_appointment,43,logged time differs from assigned; long call (40+ turns),logged_wrong:time long
+e05d194d4c034284,schedule_appointment,25,logged day is missing; logged time is missing; no thank-you / goodbye at the end,logged_wrong:day:missing logged_wrong:time:missing no_close
+e46bda445f9a4958,schedule_appointment,10,logged time differs from assigned; short call (10 turns or fewer),logged_wrong:time short
+020e48edcf0940a4,transfer_money,20,clean: logged values match assigned,log_ok
+58b5be29985848e9,transfer_money,35,logged transfer_amount differs from assigned; logged transfer_destination_account differs from assigned; logged transfer_source_account differs from assigned; no thank-you / goodbye at the end,logged_wrong:transfer_amount logged_wrong:transfer_destination_account logged_wrong:transfer_source_account no_close
+5f90307229e04226,transfer_money,30,logged transfer_amount is missing; logged transfer_destination_account is missing; logged transfer_source_account is missing,logged_wrong:transfer_amount:missing logged_wrong:transfer_destination_account:missing logged_wrong:transfer_source_account:missing
+77339eed9cf249a9,transfer_money,30,no greeting naming the bank; agent logged a different task type than assigned,no_greeting wrong_task_type
+da37afca09064b53,transfer_money,4,no thank-you / goodbye at the end; agent logged nothing; agent never asks if anything else is needed; short call (10 turns or fewer),no_close no_log no_offer_help short
+ebdc2700b6524a53,transfer_money,41,long call (40+ turns),log_ok long
+fa9cc187b49b4c89,transfer_money,21,agent submitted more than once (last counts),log_ok resubmitted

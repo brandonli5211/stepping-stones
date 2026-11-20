@@ -17,9 +17,9 @@ dev = [
 ]
 
 [project.scripts]
-serve = "app.commands:serve"
-migrate = "app.commands:migrate"
-test = "app.commands:test"
+serve = "app.infrastructure.commands:serve"
+migrate = "app.infrastructure.commands:migrate"
+test = "app.infrastructure.commands:test"
 
 [build-system]
 requires = ["hatchling"]

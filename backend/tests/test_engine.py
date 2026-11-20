@@ -2,7 +2,7 @@ import asyncio
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_engine, get_session
+from app.adapters.persistence.engine import get_engine, get_session
 
 _DATABASE_URL = "postgresql://tester:secret@db.example:5432/stones"
 _ASYNC_DATABASE_URL = "postgresql+psycopg://tester:secret@db.example:5432/stones"

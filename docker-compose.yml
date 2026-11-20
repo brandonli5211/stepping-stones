@@ -21,14 +21,18 @@ services:
 
   backend:
     build: ./backend
-    command: uv run serve
+    command: sh -c "uv run migrate && uv run serve"
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stepping}:${POSTGRES_PASSWORD:-stepping}@db:5432/${POSTGRES_DB:-stepping_stones}
       CORS_ORIGINS: http://localhost:5173
+      RULES_DIR: /docs/procedures/schema3
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:8b}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
+      - ./docs:/docs:ro
       - /app/.venv
     depends_on:
       db:

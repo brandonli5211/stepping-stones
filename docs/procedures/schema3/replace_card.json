@@ -1,0 +1,175 @@
+{
+  "schema_version": 3,
+  "call_type": "replace_card",
+  "name": "Replace card",
+  "version": 1,
+  "description": "The caller lost a card and asks for a replacement (debit or credit).",
+  "total_points": 100,
+  "gate": {
+    "question": "Is this a card-replacement call: does the caller want a lost or damaged card replaced?"
+  },
+  "logged_task_type": {
+    "metadata_key": "task_type",
+    "expected": "replace_card",
+    "expected_raw": "replace card"
+  },
+  "fields": [
+    {
+      "key": "replacement_card_type",
+      "metadata_key": "replacement card type",
+      "type": "card_type",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request",
+        "agent_read_back"
+      ],
+      "model_hint": "The kind of card the caller wants replaced: debit or credit."
+    }
+  ],
+  "steps": [
+    {
+      "key": "greet_and_open",
+      "name": "Greet and open",
+      "description": "State the bank name and your own name, then ask how you can help.",
+      "points": 5,
+      "example_phrase": "Hello, this is Harper Valley National Bank, my name is Jennifer. How can I help you today?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent names the bank and gives their own name, then asks how they can help."
+    },
+    {
+      "key": "collect_card_type",
+      "name": "Collect card type",
+      "description": "Get which card the caller wants replaced (debit or credit), by asking or by confirming.",
+      "points": 20,
+      "example_phrase": "Which card would you like to replace?",
+      "logs": [
+        "replacement_card_type"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the card type from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "log_card_replacement",
+      "name": "Log the card replacement",
+      "description": "Log the task type and the card type.",
+      "points": 45,
+      "example_phrase": "(done in the system)",
+      "logs": [
+        "replacement_card_type"
+      ],
+      "sub_checks": [
+        {
+          "key": "logged_task_type",
+          "description": "The agent logged the task type 'replace card'",
+          "points": 5,
+          "type": "logged_task_type",
+          "expected": "replace_card"
+        },
+        {
+          "key": "logged_card_type",
+          "description": "The logged card type matches what the caller asked",
+          "points": 40,
+          "type": "logged_matches_request",
+          "fields": [
+            "replacement_card_type"
+          ]
+        }
+      ],
+      "done_when": "The agent logged the right task type and card type."
+    },
+    {
+      "key": "confirm_replacement",
+      "name": "Confirm replacement",
+      "description": "Tell the caller the replacement card has been ordered, and which card it is.",
+      "points": 20,
+      "example_phrase": "I've ordered your replacement debit card.",
+      "logs": [
+        "replacement_card_type"
+      ],
+      "sub_checks": [
+        {
+          "key": "replacement_confirmed",
+          "description": "The agent said the replacement card was ordered",
+          "points": 10,
+          "type": "confirmation_evidence",
+          "step": "confirm_replacement"
+        },
+        {
+          "key": "read_back_card_type",
+          "description": "The card type said back matches what the caller asked",
+          "points": 10,
+          "type": "read_back_matches_request",
+          "fields": [
+            "replacement_card_type"
+          ]
+        }
+      ],
+      "done_when": "The agent says the replacement was ordered and names the right card type."
+    },
+    {
+      "key": "offer_further_help",
+      "name": "Offer further help",
+      "description": "Ask whether the caller needs anything else.",
+      "points": 5,
+      "example_phrase": "Is there anything else I can help you with?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent asks whether the caller needs anything else."
+    },
+    {
+      "key": "close",
+      "name": "Close",
+      "description": "Thank the caller and end the call.",
+      "points": 5,
+      "example_phrase": "Thank you for calling, you have a great day.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent thanks the caller or says goodbye before the call ends."
+    }
+  ],
+  "model_output_example": {
+    "is_expected_call": {
+      "value": true,
+      "turn": 0,
+      "quote": "exact words copied from that turn"
+    },
+    "steps": {
+      "greet_and_open": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "collect_card_type": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "confirm_replacement": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "offer_further_help": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "close": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "caller_request": {
+      "replacement_card_type": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "agent_read_back": {
+      "replacement_card_type": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "schema_version": 3,
+  "call_type": "order_checks",
+  "name": "Order checks",
+  "version": 1,
+  "description": "The caller wants a new box of checks sent to their home address.",
+  "total_points": 100,
+  "gate": {
+    "question": "Is this a check-ordering call: does the caller want to order new checks?"
+  },
+  "logged_task_type": {
+    "metadata_key": "task_type",
+    "expected": "order_checks",
+    "expected_raw": "order checks"
+  },
+  "fields": [
+    {
+      "key": "home_address",
+      "metadata_key": "home address",
+      "type": "address",
+      "role": "logged",
+      "reference": "caller_request",
+      "model_reports": [
+        "caller_request"
+      ],
+      "model_hint": "The home address the caller wants the checks sent to."
+    }
+  ],
+  "steps": [
+    {
+      "key": "greet_and_open",
+      "name": "Greet and open",
+      "description": "State the bank name and your own name, then ask how you can help.",
+      "points": 5,
+      "example_phrase": "Hello, this is Harper Valley National Bank, my name is Jennifer. How can I help you today?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent names the bank and gives their own name, then asks how they can help."
+    },
+    {
+      "key": "collect_home_address",
+      "name": "Collect home address",
+      "description": "Get the address the checks should be sent to, by asking or by confirming.",
+      "points": 20,
+      "example_phrase": "What is your home address?",
+      "logs": [
+        "home_address"
+      ],
+      "sub_checks": [],
+      "done_when": "The agent has the home address from the caller: asked for it, or confirmed it after the caller gave it."
+    },
+    {
+      "key": "log_check_order",
+      "name": "Log the check order",
+      "description": "Log the task type and the home address.",
+      "points": 65,
+      "example_phrase": "(done in the system)",
+      "logs": [
+        "home_address"
+      ],
+      "sub_checks": [
+        {
+          "key": "logged_task_type",
+          "description": "The agent logged the task type 'order checks'",
+          "points": 5,
+          "type": "logged_task_type",
+          "expected": "order_checks"
+        },
+        {
+          "key": "logged_home_address",
+          "description": "The logged home address matches what the caller said",
+          "points": 60,
+          "type": "logged_matches_request",
+          "fields": [
+            "home_address"
+          ]
+        }
+      ],
+      "done_when": "The agent logged the right task type and values."
+    },
+    {
+      "key": "offer_further_help",
+      "name": "Offer further help",
+      "description": "Ask whether the caller needs anything else.",
+      "points": 5,
+      "example_phrase": "Is there anything else I can help you with?",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent asks whether the caller needs anything else."
+    },
+    {
+      "key": "close",
+      "name": "Close",
+      "description": "Thank the caller and end the call.",
+      "points": 5,
+      "example_phrase": "Thank you for calling, you have a great day.",
+      "logs": [],
+      "sub_checks": [],
+      "done_when": "The agent thanks the caller or says goodbye before the call ends."
+    }
+  ],
+  "model_output_example": {
+    "is_expected_call": {
+      "value": true,
+      "turn": 0,
+      "quote": "exact words copied from that turn"
+    },
+    "steps": {
+      "greet_and_open": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "collect_home_address": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "offer_further_help": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      },
+      "close": {
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    },
+    "caller_request": {
+      "home_address": {
+        "value": "...",
+        "turn": 0,
+        "quote": "exact words copied from that turn"
+      }
+    }
+  }
+}

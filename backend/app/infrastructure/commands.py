@@ -6,7 +6,7 @@ from pathlib import Path
 
 ProcessRunner = Callable[[Sequence[str]], int]
 
-_BACKEND = Path(__file__).resolve().parent.parent
+_BACKEND = Path(__file__).resolve().parent.parent.parent
 _TESTS = _BACKEND / "tests"
 
 

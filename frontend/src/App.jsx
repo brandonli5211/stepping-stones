@@ -1,21 +1,19 @@
-import { useEffect, useState } from "react";
+import CallsPage from "./CallsPage.jsx";
+import "./styles.css";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const NAV = ["My calls", "Progress", "Procedures"];
 
 export default function App() {
-  const [health, setHealth] = useState("checking...");
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/health`)
-      .then((r) => r.json())
-      .then((d) => setHealth(`${d.status} (database: ${d.database})`))
-      .catch(() => setHealth("backend unreachable"));
-  }, []);
-
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: 32 }}>
-      <h1>Stepping Stones</h1>
-      <p>Backend health: {health}</p>
-    </main>
+    <div className="shell">
+      <nav className="sidebar">
+        <div className="brand">Stepping<br />Stones</div>
+        <ul>
+          {NAV.map((item) => <li key={item} className={item === "My calls" ? "active" : ""}>{item}</li>)}
+        </ul>
+        <div className="user">Agent</div>
+      </nav>
+      <main className="content"><CallsPage /></main>
+    </div>
   );
 }

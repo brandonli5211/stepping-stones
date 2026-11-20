@@ -5,7 +5,8 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from app.models import Base
+from app.adapters.persistence.models import Base
+import app.models  # noqa: F401 — register coaching tables on Base.metadata
 
 config = context.config
 target_metadata = Base.metadata

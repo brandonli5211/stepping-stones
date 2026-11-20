@@ -1,0 +1,297 @@
+{
+  "schema_version": 3,
+  "description": "Shared rules for every procedure. A procedure file overrides or adds to these. Files starting with _ are skipped by validate.py.",
+  "statuses": [
+    "completed",
+    "missed",
+    "wrong",
+    "under_review"
+  ],
+  "severity": {
+    "basis": "points_lost",
+    "note": "Severity comes from the points lost on a failed step or part, not from what the step is worth in total.",
+    "bands": [
+      {
+        "name": "slip",
+        "min_points_lost": 1,
+        "max_points_lost": 5
+      },
+      {
+        "name": "inaccuracy",
+        "min_points_lost": 6,
+        "max_points_lost": 10
+      },
+      {
+        "name": "mistake",
+        "min_points_lost": 11,
+        "max_points_lost": 20
+      },
+      {
+        "name": "critical",
+        "min_points_lost": 21,
+        "max_points_lost": null
+      }
+    ]
+  },
+  "shared_step_keys": [
+    "greet_and_open",
+    "offer_further_help",
+    "close"
+  ],
+  "step_judging": "A step with no sub_checks is judged from the model's evidence: the turn and exact words where the agent did it. A step with sub_checks is judged by its sub-checks: each failed part loses its own points. The model is asked for step evidence only for steps with no sub_checks or with a confirmation_evidence sub-check.",
+  "gate": {
+    "model_field": "is_expected_call",
+    "if_not_expected": "Do not score this procedure. Send the call to review with the reason. Do not mark any step missed. The call may belong to another call type.",
+    "why": "In the HarperValleyBank data the assigned task sometimes does not match the conversation."
+  },
+  "field_types": {
+    "amount": {
+      "model_value": "digits, e.g. 79 or 135.50",
+      "rule": "Compare as numbers. '$135', '135', '135.00', 135 and 'one hundred thirty five' are equal.",
+      "equal": [
+        [
+          "$135",
+          "135.00"
+        ],
+        [
+          "seventy nine",
+          "79"
+        ]
+      ],
+      "not_equal": [
+        [
+          "135",
+          "153"
+        ]
+      ]
+    },
+    "account": {
+      "model_value": "checking or savings, one lowercase word",
+      "rule": "Lowercase. Drop 'your', 'my', 'the' and 'account'. 'your savings account' equals savings.",
+      "equal": [
+        [
+          "your savings account",
+          "Savings"
+        ]
+      ],
+      "not_equal": [
+        [
+          "savings",
+          "checking"
+        ]
+      ]
+    },
+    "card_type": {
+      "model_value": "debit or credit, one lowercase word",
+      "rule": "Lowercase. 'my debit card' equals debit.",
+      "equal": [
+        [
+          "my debit card",
+          "Debit"
+        ]
+      ],
+      "not_equal": [
+        [
+          "debit",
+          "credit"
+        ]
+      ]
+    },
+    "day": {
+      "model_value": "weekday name, lowercase, e.g. sunday",
+      "rule": "Compare weekday names, ignoring case. A calendar date such as 06/05/2020 is not a day and does not match.",
+      "equal": [
+        [
+          "Sunday",
+          "sunday"
+        ]
+      ],
+      "not_equal": [
+        [
+          "Friday",
+          "06/05/2020"
+        ]
+      ]
+    },
+    "time": {
+      "model_value": "hour, minutes and am or pm, e.g. 2:45 pm",
+      "rule": "Compare hour, minute and am/pm. '2pm', '2:00 PM' and 'two p m' are equal. A time with no am/pm ('3:45') does not match.",
+      "equal": [
+        [
+          "2pm",
+          "2:00 PM"
+        ]
+      ],
+      "not_equal": [
+        [
+          "11:15 AM",
+          "1:16 am"
+        ],
+        [
+          "3:45",
+          "3:45 PM"
+        ]
+      ]
+    },
+    "address": {
+      "model_value": "street address as spoken, e.g. 605 First Street, Forest Ranch, Oregon, 35734",
+      "rule": "Lowercase. 'Street'='st', 'Avenue'='ave', 'California'='ca', 'Oregon'='or'. Punctuation and 'your'/'my' are ignored. House number, street name, city, state and zip must all match.",
+      "equal": [
+        [
+          "214 First Street, Forest Ranch, California, 69677",
+          "214 First St Forest Ranch CA 69677"
+        ]
+      ],
+      "not_equal": [
+        [
+          "214 First Street",
+          "241 First Street"
+        ]
+      ]
+    },
+    "phone": {
+      "model_value": "10 digits, e.g. 8838387344",
+      "rule": "Compare the digits only. '883-838-7344', '(883) 838 7344' and 8838387344 are equal.",
+      "equal": [
+        [
+          "883-838-7344",
+          "8838387344"
+        ]
+      ],
+      "not_equal": [
+        [
+          "883-838-7344",
+          "883-838-7345"
+        ]
+      ]
+    },
+    "text": {
+      "model_value": "the words as spoken, lowercase",
+      "rule": "Lowercase, ignore punctuation and extra spaces.",
+      "equal": [
+        [
+          "Fossil Gas",
+          "fossil gas"
+        ]
+      ],
+      "not_equal": [
+        [
+          "Fossil Gas",
+          "Fossil Oil"
+        ]
+      ]
+    }
+  },
+  "field_roles": {
+    "logged": "The agent enters it in the system. Judged by comparing the last logged value with what the caller asked for (reference: caller_request).",
+    "told_to_caller": "The agent must say it to the caller. Judged by comparing what the agent said with the bank's own record (reference: system_record). The model never sees the record."
+  },
+  "sub_check_types": {
+    "logged_task_type": {
+      "params": [
+        "expected"
+      ],
+      "passes_when": "The agent logged the expected task type (spaces become underscores before comparing).",
+      "fails_when": "A different type, or none, was logged.",
+      "under_review_when": "never: this is read from the metadata only."
+    },
+    "logged_matches_request": {
+      "params": [
+        "fields"
+      ],
+      "passes_when": "For every listed field, the last logged value equals what the caller asked for (compared by the field's type).",
+      "fails_when": "A listed field was not logged, or differs.",
+      "under_review_when": "The caller's request cannot be verified: the quote is not in the turn word for word, the quote lacks the value, or the model was unsure."
+    },
+    "read_back_matches_request": {
+      "params": [
+        "fields"
+      ],
+      "passes_when": "For every listed field the agent said back what the caller asked for.",
+      "fails_when": "A listed field was never said back, or differs from the request.",
+      "under_review_when": "Either the agent's words or the caller's request cannot be verified."
+    },
+    "stated_matches_system_record": {
+      "params": [
+        "field"
+      ],
+      "passes_when": "What the agent said equals the bank's own record for the field.",
+      "fails_when": "The agent never said it, or said a different value.",
+      "under_review_when": "The agent's words cannot be verified."
+    },
+    "confirmation_evidence": {
+      "params": [
+        "step"
+      ],
+      "passes_when": "The model quotes an agent turn that confirms the action was done, and the quote is verified.",
+      "fails_when": "The model finds no such turn.",
+      "under_review_when": "The quote cannot be verified."
+    }
+  },
+  "metadata_use": {
+    "send_to_model": [
+      "agent.metadata.agent_name"
+    ],
+    "keep_in_code": [
+      "agent.responses (last submission with data = what the agent logged)",
+      "tasks (system_record values only, for told_to_caller fields)"
+    ],
+    "never_send_to_model": [
+      "tasks",
+      "agent.responses"
+    ],
+    "why": "The model only reads the transcript and reports facts. Code compares those facts with the logged values and system records. 'tasks' is the dataset's role-play answer key. A real call has no answer key, and showing it to the model would bias it."
+  },
+  "judging_rules": [
+    {
+      "key": "caller_is_source_of_truth",
+      "rule": "What the caller asked for is what the caller said in the transcript. If the caller goes off-script, the agent is judged on the conversation."
+    },
+    {
+      "key": "last_value_wins",
+      "rule": "If the caller corrects or changes a value, the last thing they said is the request."
+    },
+    {
+      "key": "volunteered_info_counts",
+      "rule": "A collect step is done when the agent has the item. Asking for it counts, and so does confirming it after the caller already gave it. Do not mark a step missed only because the agent did not ask."
+    },
+    {
+      "key": "repeat_requests_are_fine",
+      "rule": "Asking the caller to repeat something is not penalised. Judge the final logged and stated values."
+    },
+    {
+      "key": "last_submission_counts",
+      "rule": "If the agent submitted the form more than once, the last submission is what was logged."
+    },
+    {
+      "key": "extra_logged_fields_ignored",
+      "rule": "Ignore logged fields the procedure does not mention (for example a stray 'replacement card type' on a transfer)."
+    },
+    {
+      "key": "order_not_penalised",
+      "rule": "Steps out of order are flagged as a warning. They lose no points."
+    },
+    {
+      "key": "unverifiable_means_review",
+      "rule": "Every quote must appear word for word in the turn it names, said by the right person, and must contain the value it supports. If not, or if the model is unsure, the item is under_review and no points are taken off."
+    },
+    {
+      "key": "bank_name_mismatch_means_review",
+      "rule": "If the greeting seems to name the wrong bank, send it to review: the human transcript may be wrong."
+    }
+  ],
+  "prompt_template": "You are reading a call between a bank agent and a caller. The agent's name is {{agent_name}}.\nReport facts only. Do not score the call and do not judge the agent.\n\nFirst decide: {{gate_question}}\n\nRequired steps the agent should do:\n{{steps}}\n\nFields to report:\n{{fields}}\n\nTranscript (each line is [turn number] speaker: words):\n{{transcript}}\n\nAnswer with one JSON object and nothing else. Rules:\n- \"is_expected_call\": true or false, with the turn and exact words that show it.\n- \"steps\": for every step key above, the agent turn where the agent did that step, with the exact words. Use null if the agent never did it. A step counts if the agent asked for the item, or confirmed it after the caller had already given it.\n- \"caller_request\": for each field listed as caller_request above, what the CALLER asked for. Quote the caller's own turn. If the caller changed their mind or corrected themselves, use the last thing they said.\n- \"agent_read_back\": for each field listed as agent_read_back above, what the AGENT said to the caller about it (a read-back of what the caller asked, or a value the agent stated). Quote the agent's own turn. Use null for a field the agent never said.\n- Follow the format hint of each field. Do not swap fields that look alike (for example source and destination).\n- Every \"quote\" must be copied word for word from the turn you name. Never invent or reword a quote.\n- If you are not sure about an item, add \"unsure\": true to it. Do not guess.\n\nFormat:\n{{output_format}}\n",
+  "prompt_placeholders": {
+    "{{agent_name}}": "agent.metadata.agent_name from the metadata file",
+    "{{gate_question}}": "the procedure's gate.question",
+    "{{steps}}": "one line per step that needs evidence from the transcript (a step with no sub_checks, or with a confirmation_evidence sub-check): - \"<key>\" (<name>): <done_when>  For example: \"<example_phrase>\". Steps judged only from logged values and the facts in caller_request / agent_read_back are left out.",
+    "{{fields}}": "one line per field: - <key> [<model_reports, comma separated>]: <field type's model_value>. <field.model_hint>",
+    "{{transcript}}": "one line per turn: [<index>] <speaker_role>: <human_transcript, or transcript if empty>",
+    "{{output_format}}": "the procedure's model_output_example as indented JSON"
+  },
+  "model_settings": {
+    "temperature": 0,
+    "seed": 42,
+    "response_format": "json"
+  }
+}
