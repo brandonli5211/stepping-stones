@@ -40,4 +40,4 @@ Order checks, pay bill and reset password are written (field types `address`, `p
 
 ## Used by the API
 
-`POST /calls/{call_id}` (backend/app/calls_api.py) reads these files and builds the prompt for the local model.
+`POST /calls/{call_id}` (backend/app/adapters/http/analyze.py) reads these files; the prompt for the local model is built in backend/app/domain/call_analysis.py.
