@@ -1,0 +1,83 @@
+"""Pure ordered-step evaluation rules.
+
+The model supplies observations; Python owns the saved coaching judgment.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+CONFIDENT_DECISION_THRESHOLD = 0.80
+
+
+@dataclass(frozen=True)
+class RequiredStep:
+    key: str
+    points: int
+    name: str = ""
+    done_when: str = ""
+    logged_action_keys: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DecisionEvidence:
+    turn_idx: int
+    quote: str
+
+
+@dataclass(frozen=True)
+class StepDecision:
+    choice: str
+    confidence: float
+    evidence: DecisionEvidence | None = None
+    contradictory: bool = False
+    logged_actions_match: bool = True
+
+
+@dataclass(frozen=True)
+class EvaluatedStep:
+    key: str
+    status: str
+    points_lost: int
+    points_under_review: int
+    evidence: DecisionEvidence | None
+
+
+@dataclass(frozen=True)
+class CallForEvaluation:
+    id: int
+    steps: tuple[RequiredStep, ...]
+    turn_texts: dict[int, str]
+    agent_turn_indices: tuple[int, ...] = ()
+    logged_actions: dict[str, object] | None = None
+    call_ended: bool = True
+
+
+def quote_is_in_turn(quote: str, turn_text: str) -> bool:
+    """Evidence must be a non-empty, exact substring of its stored turn."""
+    return bool(quote) and quote in turn_text
+
+
+def evaluate_step(
+    step: RequiredStep, decision: StepDecision, evidence_valid: bool, call_ended: bool = False
+) -> EvaluatedStep | None:
+    """Turn one model observation into a stored step judgment."""
+    # An observed completion must cite exact evidence.  A negative observation
+    # intentionally has no quote and is valid unless it is low-confidence or
+    # explicitly contradictory.
+    completion_lacks_evidence = decision.choice == "completed_step" and not evidence_valid
+    review = decision.confidence < CONFIDENT_DECISION_THRESHOLD or decision.contradictory or completion_lacks_evidence
+    if review or decision.choice not in {"completed_step", "not_yet_observed"}:
+        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence)
+    if decision.choice == "not_yet_observed" and not call_ended:
+        return None
+    if decision.choice == "not_yet_observed":
+        return EvaluatedStep(step.key, "missed", step.points, 0, None)
+    if not decision.logged_actions_match:
+        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence)
+    return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence)
+
+
+def finalize_remaining(steps: tuple[RequiredStep, ...]) -> tuple[EvaluatedStep, ...]:
+    """An ended call has a missed result for each definitively unseen later step."""
+    return tuple(EvaluatedStep(step.key, "missed", step.points, 0, None) for step in steps)
