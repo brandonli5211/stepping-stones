@@ -85,6 +85,7 @@ class EvaluatedStep:
     evidence: DecisionEvidence | None
     decision_confidence: float | None = None
     decision_response: dict | None = None
+    check_outcomes: tuple[CheckOutcome, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -162,7 +163,8 @@ def evaluate_checks(
 
 
 def evaluate_step(
-    step: RequiredStep, decision: StepDecision, evidence_valid: bool, call_ended: bool = False
+    step: RequiredStep, decision: StepDecision, evidence_valid: bool, call_ended: bool = False,
+    check_outcomes: tuple[CheckOutcome, ...] = (),
 ) -> EvaluatedStep | None:
     """Turn one model observation into a stored step judgment."""
     # An observed completion must cite exact evidence.  A negative observation
@@ -194,5 +196,12 @@ def evaluate_step(
         return None
     if decision.choice == "not_yet_observed":
         return EvaluatedStep(step.key, "missed", step.points, 0, None, decision.confidence, decision.raw_response)
+    if any(outcome.under_review for outcome in check_outcomes):
+        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence,
+                             decision.confidence, decision.raw_response, check_outcomes)
+    points_lost = sum(outcome.points_lost for outcome in check_outcomes)
+    if points_lost:
+        return EvaluatedStep(step.key, "wrong", points_lost, 0, decision.evidence,
+                             decision.confidence, decision.raw_response, check_outcomes)
     return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence,
-                         decision.confidence, decision.raw_response)
+                         decision.confidence, decision.raw_response, check_outcomes)

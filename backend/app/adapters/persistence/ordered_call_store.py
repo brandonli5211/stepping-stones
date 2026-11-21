@@ -100,6 +100,10 @@ class SqlAlchemyOrderedCallStore:
             step.evidence_quote = result.evidence.quote if result.evidence else None
             step.decision_confidence = result.decision_confidence
             step.decision_response = result.decision_response
+            step.sub_checks = [
+                {"key": outcome.key, "points_lost": outcome.points_lost, "under_review": outcome.under_review}
+                for outcome in result.check_outcomes
+            ]
         counts = Counter(step.status for step in steps)
         points_lost = sum(step.points_lost for step in steps)
         points_total = sum(step.points for step in evaluation.steps)

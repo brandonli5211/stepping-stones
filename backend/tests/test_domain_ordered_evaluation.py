@@ -105,3 +105,13 @@ def test_missing_fact_is_review_not_a_guess():
         (ProcedureCheck("logged", "logged_matches_request", 20, ("account",)),), {}, {"account": "checking"}
     )[0]
     assert outcome.under_review and outcome.points_lost == 0
+
+
+def test_failed_sub_checks_produce_partial_wrong_points_not_a_full_step_loss():
+    checks = (ProcedureCheck("logged", "logged_matches_request", 35, ("source",)),)
+    outcomes = evaluate_checks(checks, {"request:source": "checking"}, {"source": "savings"})
+    result = evaluate_step(
+        RequiredStep("submit", 55), StepDecision("completed_step", .95, DecisionEvidence(9, "read back")), True,
+        check_outcomes=outcomes,
+    )
+    assert (result.status, result.points_lost, result.check_outcomes) == ("wrong", 35, outcomes)
