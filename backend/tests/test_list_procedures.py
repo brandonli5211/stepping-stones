@@ -11,7 +11,7 @@ class Reader:
     async def list_active(self):
         self.called = True
         return (Procedure("transfer_money", "Transfer money", "Move money.",
-                          (ProcedureStep(1, "Greet and open", "Open the call."),)),)
+                          (ProcedureStep("greet_and_open", 1, "Greet and open", "Open the call."),)),)
 
 
 def test_list_procedures_returns_active_templates():

@@ -23,7 +23,7 @@ class SqlAlchemyProcedureReader:
                 name=row.name,
                 description=row.rules["description"],
                 steps=tuple(
-                    ProcedureStep(index, step["name"], step["description"])
+                    ProcedureStep(step["key"], index, step["name"], step["description"])
                     for index, step in enumerate(row.rules["steps"], start=1)
                 ),
             )

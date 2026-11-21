@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ProcedureStep:
+    key: str
     order: int
     step_name: str
     step_description: str

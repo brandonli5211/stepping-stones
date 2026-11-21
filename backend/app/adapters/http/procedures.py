@@ -14,11 +14,12 @@ router = APIRouter()
 def present(procedures: tuple[Procedure, ...]) -> dict:
     return {"procedures": [
         {
-            "task_type": procedure.task_type,
+            "call_type": procedure.task_type,
             "name": procedure.name,
             "description": procedure.description,
             "steps": [
                 {
+                    "key": step.key,
                     "order": step.order,
                     "step_name": step.step_name,
                     "step_description": step.step_description,

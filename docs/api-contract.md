@@ -2,6 +2,28 @@
 
 Response shapes the frontend can build against. Every endpoint is also listed, with its schema, at `/docs` on the running API.
 
+## `GET /procedures`
+
+Returns every active procedure template for the Procedures page. Templates are
+read-only, and their ordered steps are the same stable keys used by call detail.
+
+```text
+ProcedureList
+└── procedures: Procedure[]
+    ├── call_type: str                # snake_case, e.g. transfer_money
+    ├── name: str                     # e.g. "Transfer money"
+    ├── description: str
+    └── steps: ProcedureStep[]        # procedure order
+        ├── key: str                  # matches GET /calls/{id}.steps[].key
+        ├── order: int                # one-based
+        ├── step_name: str
+        └── step_description: str
+```
+
+The response includes every active template and no evaluator, model, or logged
+action fields. A missing or unknown template is not represented because the
+endpoint returns the complete active list.
+
 ## `GET /calls/{id}`
 
 **Feature**: [spec](../specs/002-call-detail-api/spec.md) · **Date**: 2026-11-08 · **Consumers**: #35, #36

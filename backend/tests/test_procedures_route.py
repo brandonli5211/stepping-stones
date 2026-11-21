@@ -5,7 +5,7 @@ from app.domain.procedure_list import Procedure, ProcedureStep
 
 
 PROCEDURES = (Procedure("transfer_money", "Transfer money", "Move money.",
-                        (ProcedureStep(1, "Greet and open", "Open the call."),)),)
+                        (ProcedureStep("greet_and_open", 1, "Greet and open", "Open the call."),)),)
 
 
 class UseCase:
@@ -16,8 +16,8 @@ class UseCase:
 def test_present_exposes_only_page_safe_procedure_fields():
     assert present(PROCEDURES) == {
         "procedures": [{
-            "task_type": "transfer_money", "name": "Transfer money", "description": "Move money.",
-            "steps": [{"order": 1, "step_name": "Greet and open", "step_description": "Open the call."}],
+            "call_type": "transfer_money", "name": "Transfer money", "description": "Move money.",
+            "steps": [{"key": "greet_and_open", "order": 1, "step_name": "Greet and open", "step_description": "Open the call."}],
         }]
     }
 
