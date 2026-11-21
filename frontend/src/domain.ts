@@ -37,3 +37,20 @@ export const MENU: MenuItem[] = [
 ];
 
 export type AgentProfile = { name: string; role: string | null };
+
+// the three score bands from the design language: On track 85 to 100, Getting there 60 to 84, Focus here under 60
+export type ScoreBand = "on_track" | "getting_there" | "focus_here";
+
+export const BAND_LABELS: Record<ScoreBand, string> = {
+  on_track: "On track",
+  getting_there: "Getting there",
+  focus_here: "Focus here",
+};
+
+// which band a score the server gave falls in. no score, no band
+export function scoreBand(score: number | null): ScoreBand | null {
+  if (score == null) return null;
+  if (score >= 85) return "on_track";
+  if (score >= 60) return "getting_there";
+  return "focus_here";
+}

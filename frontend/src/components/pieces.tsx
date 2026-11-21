@@ -1,4 +1,4 @@
-import { STATUS_LABELS, type StepStatus } from "../domain";
+import { STATUS_LABELS, type ScoreBand, type StepStatus } from "../domain";
 
 // the reusable bits every screen shares. they only draw what they're given, no deciding
 
@@ -63,8 +63,20 @@ export function StatusLegend() {
   );
 }
 
+// the ring's color for each band; with no band it stays brand blue
+const BAND_STROKES: Record<ScoreBand, string> = {
+  on_track: "stroke-good",
+  getting_there: "stroke-warn",
+  focus_here: "stroke-bad",
+};
+
 // just shows the score it gets. "–" when there isn't one yet
-export function ScoreRing({ value, size = 88 }: { value: number | null; size?: number }) {
+export function ScoreRing({ value, size = 88, band = null, suffix = "%" }: {
+  value: number | null;
+  size?: number;
+  band?: ScoreBand | null;
+  suffix?: string;
+}) {
   const r = size / 2 - 5;
   const length = 2 * Math.PI * r;
   return (
@@ -74,10 +86,11 @@ export function ScoreRing({ value, size = 88 }: { value: number | null; size?: n
         <circle
           cx={size / 2} cy={size / 2} r={r} strokeWidth="9" strokeLinecap="round"
           strokeDasharray={length} strokeDashoffset={length * (1 - (value ?? 0) / 100)}
-          className="fill-none stroke-brand"
+          className={`fill-none ${band ? BAND_STROKES[band] : "stroke-brand"}`}
+          data-band={band ?? undefined}
         />
       </svg>
-      <span className="font-bold" style={{ fontSize: size * 0.22 }}>{value == null ? "–" : `${value}%`}</span>
+      <span className="font-bold" style={{ fontSize: size * 0.22 }}>{value == null ? "–" : `${value}${suffix}`}</span>
     </div>
   );
 }

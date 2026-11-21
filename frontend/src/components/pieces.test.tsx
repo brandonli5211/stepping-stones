@@ -48,3 +48,11 @@ test("state message: error is an alert, empty isn't", () => {
   expect(screen.getByRole("alert").textContent).toContain("Broke");
   expect(screen.getAllByRole("alert")).toHaveLength(1);
 });
+
+test("score ring colors itself by its band and can drop the percent sign", () => {
+  const { container } = render(<><ScoreRing value={45} band="focus_here" suffix="" /><ScoreRing value={90} /></>);
+  expect(screen.getByRole("img", { name: "Score 45%" }).textContent).toBe("45");
+  const bands = [...container.querySelectorAll("circle[data-band]")].map((c) => c.getAttribute("data-band"));
+  expect(bands).toEqual(["focus_here"]);
+  expect(container.querySelector("circle[data-band]")?.getAttribute("class")).toContain("stroke-bad");
+});
