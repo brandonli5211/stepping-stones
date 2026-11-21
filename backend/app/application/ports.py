@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.domain.call_list import CallRecord, CallWindow, ListFilter, WeekTotals
     from app.domain.demo_results import ScoredCall, StoredCall
     from app.domain.ordered_evaluation import CallForEvaluation, EvaluatedStep, RequiredStep, StepDecision
+    from app.domain.procedure_list import Procedure
 
 
 class DatabaseProbe(Protocol):
@@ -55,6 +56,13 @@ class CallListReader(Protocol):
 
     async def week_totals(self, window: CallWindow) -> Sequence[WeekTotals]:
         """Steps completed and total per UTC Monday-start week in the window, oldest week first."""
+
+
+class ProcedureReader(Protocol):
+    """Reads active, display-safe procedure templates."""
+
+    async def list_active(self) -> Sequence[Procedure]:
+        """All active procedures with their ordered display steps."""
 
 
 class RulesUnavailable(Exception):
