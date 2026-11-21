@@ -74,3 +74,16 @@ def test_later_step_cannot_use_evidence_before_an_earlier_step():
     assert model.minimum_evidence_turns == [1, 2]
     assert [step.status for step in store.saved[1]] == ["completed", "under_review"]
     assert output.under_review == 1
+
+
+def test_reviewed_evidence_does_not_consume_the_transcript_cursor():
+    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("collect", 3)), {1: "Need $10", 2: "Welcome"})
+    store = Store(call)
+    model = Model((
+        StepDecision("completed_step", .79, DecisionEvidence(2, "Welcome")),
+        StepDecision("completed_step", .99, DecisionEvidence(1, "Need $10")),
+    ))
+    output = asyncio.run(EvaluateOrderedCallInteractor(store, model, Presenter()).execute(EvaluateOrderedCallInputData(7)))
+    assert model.minimum_evidence_turns == [1, 1]
+    assert [step.status for step in store.saved[1]] == ["under_review", "completed"]
+    assert output.completed == 1

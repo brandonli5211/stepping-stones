@@ -5,7 +5,7 @@ from app.application.evaluate_ordered_call.input_data import EvaluateOrderedCall
 from app.application.evaluate_ordered_call.output_boundary import EvaluateOrderedCallOutputBoundary
 from app.application.evaluate_ordered_call.output_data import EvaluateOrderedCallOutputData
 from app.application.ports import OrderedCallStore, StepDecisionModel
-from app.domain.ordered_evaluation import evaluate_step, quote_is_in_turn
+from app.domain.ordered_evaluation import evaluate_step, next_transcript_cursor, quote_is_in_turn
 
 
 @dataclass(frozen=True)
@@ -19,12 +19,12 @@ class EvaluateOrderedCallInteractor:
         if call is None:
             raise LookupError(f"no call with id {data.call_id}")
         results = []
-        minimum_evidence_turn = 1
+        transcript_cursor = 1
         for step in call.steps:
-            decision = await self.model.decide(call, step, minimum_evidence_turn)
+            decision = await self.model.decide(call, step, transcript_cursor)
             evidence_valid = (
                 decision.evidence is not None
-                and decision.evidence.turn_idx >= minimum_evidence_turn
+                and decision.evidence.turn_idx >= transcript_cursor
                 and quote_is_in_turn(decision.evidence.quote, call.turn_texts.get(decision.evidence.turn_idx, ""))
             )
             result = evaluate_step(step, decision, evidence_valid, call.call_ended)
@@ -33,8 +33,7 @@ class EvaluateOrderedCallInteractor:
                 # may stop here and resume later without treating it as a miss.
                 continue
             results.append(result)
-            if evidence_valid and decision.evidence is not None:
-                minimum_evidence_turn = decision.evidence.turn_idx
+            transcript_cursor = next_transcript_cursor(transcript_cursor, decision, evidence_valid)
         if call.call_ended and len(results) != len(call.steps):
             raise ValueError("complete-call evaluation requires one result for every procedure step")
         await self.store.save_evaluation(call, tuple(results))
