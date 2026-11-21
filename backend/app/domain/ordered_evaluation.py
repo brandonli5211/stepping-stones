@@ -6,9 +6,12 @@ The model supplies observations; Python owns the saved coaching judgment.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 CONFIDENT_DECISION_THRESHOLD = 0.80
 CONFIDENT_ACTION_MATCH_THRESHOLD = 0.70
+
+StepKind = Literal["simple", "collection", "confirmation"]
 
 
 @dataclass(frozen=True)
@@ -19,6 +22,20 @@ class RequiredStep:
     done_when: str = ""
     logged_action_keys: tuple[str, ...] = ()
     checks_logged_actions: bool = False
+
+    @property
+    def kind(self) -> StepKind:
+        """Classify from procedure data instead of step-name conventions.
+
+        A procedure's confirmation checks need request/read-back facts; a
+        collection step needs a value supplied by either speaker; all other
+        steps are simple agent actions.
+        """
+        if self.checks_logged_actions:
+            return "confirmation"
+        if self.logged_action_keys:
+            return "collection"
+        return "simple"
 
 
 @dataclass(frozen=True)
@@ -62,6 +79,25 @@ class CallForEvaluation:
 def quote_is_in_turn(quote: str, turn_text: str) -> bool:
     """Evidence must be a non-empty, exact substring of its stored turn."""
     return bool(quote) and quote in turn_text
+
+
+def next_transcript_cursor(
+    cursor: int, decision: StepDecision, evidence_valid: bool
+) -> int:
+    """Advance only when a confident cited fact was observed.
+
+    The cursor is deliberately inclusive.  A single caller turn can give the
+    amount, source, and destination, so later collection steps may cite the
+    same turn.  Absence and uncertainty never consume transcript evidence.
+    """
+    if (
+        decision.choice == "completed_step"
+        and evidence_valid
+        and decision.confidence >= CONFIDENT_DECISION_THRESHOLD
+        and decision.evidence is not None
+    ):
+        return decision.evidence.turn_idx
+    return cursor
 
 
 def evaluate_step(

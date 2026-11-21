@@ -5,6 +5,7 @@ from app.domain.ordered_evaluation import (
     RequiredStep,
     StepDecision,
     evaluate_step,
+    next_transcript_cursor,
     quote_is_in_turn,
 )
 
@@ -63,3 +64,20 @@ def test_unobserved_step_waits_until_call_end_then_is_missed_with_the_remaining_
     assert evaluate_step(STEP, StepDecision("not_yet_observed", .99), False) is None
     result = evaluate_step(STEP, StepDecision("not_yet_observed", .99), False, call_ended=True)
     assert result.status == "missed"
+
+
+def test_procedure_data_classifies_simple_collection_and_confirmation_steps():
+    assert RequiredStep("greet", 5).kind == "simple"
+    assert RequiredStep("amount", 5, logged_action_keys=("amount",)).kind == "collection"
+    assert RequiredStep("submit", 5, checks_logged_actions=True).kind == "confirmation"
+
+
+def test_cursor_keeps_a_caller_turn_available_for_multiple_collected_values():
+    caller_turn = StepDecision("completed_step", .99, DecisionEvidence(7, "checking to savings"))
+    assert next_transcript_cursor(2, caller_turn, True) == 7
+    assert next_transcript_cursor(7, caller_turn, True) == 7
+
+
+def test_cursor_does_not_consume_turns_for_absence_or_review():
+    assert next_transcript_cursor(7, StepDecision("not_yet_observed", .99), False) == 7
+    assert next_transcript_cursor(7, StepDecision("completed_step", .79, DecisionEvidence(9, "bye")), True) == 7
