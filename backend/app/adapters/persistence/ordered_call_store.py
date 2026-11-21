@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.call_parse import last_logged_actions
 from app.domain.demo_results import DEFAULT_SEVERITY_BANDS, severity_for
-from app.domain.ordered_evaluation import CallForEvaluation, EvaluatedStep, RequiredStep
+from app.domain.ordered_evaluation import CallForEvaluation, EvaluatedStep, ProcedureCheck, RequiredStep
 from app.models import Call, CallStep, CallTurn, Procedure
 
 
@@ -23,6 +23,9 @@ def required_steps(rules: dict) -> tuple[RequiredStep, ...]:
         RequiredStep(
             row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""), tuple(row.get("logs", ())),
             any(check.get("type") in {"logged_task_type", "logged_matches_request"} for check in row.get("sub_checks", ())),
+            tuple(ProcedureCheck(
+                check["key"], check["type"], int(check["points"]), tuple(check.get("fields", ())), check.get("expected")
+            ) for check in row.get("sub_checks", ())),
         )
         for row in rules.get("steps", ())
     )

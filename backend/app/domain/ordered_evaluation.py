@@ -15,6 +15,17 @@ StepKind = Literal["simple", "collection", "confirmation"]
 
 
 @dataclass(frozen=True)
+class ProcedureCheck:
+    """One persisted procedure sub-check, kept as data for Python to judge."""
+
+    key: str
+    kind: str
+    points: int
+    fields: tuple[str, ...] = ()
+    expected: str | None = None
+
+
+@dataclass(frozen=True)
 class RequiredStep:
     key: str
     points: int
@@ -22,6 +33,7 @@ class RequiredStep:
     done_when: str = ""
     logged_action_keys: tuple[str, ...] = ()
     checks_logged_actions: bool = False
+    checks: tuple[ProcedureCheck, ...] = ()
 
     @property
     def kind(self) -> StepKind:
@@ -31,7 +43,7 @@ class RequiredStep:
         collection step needs a value supplied by either speaker; all other
         steps are simple agent actions.
         """
-        if self.checks_logged_actions:
+        if self.checks or self.checks_logged_actions:
             return "confirmation"
         if self.logged_action_keys:
             return "collection"
