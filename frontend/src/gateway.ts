@@ -1,8 +1,10 @@
 import { ApiError, type ApiGateway } from "./application";
+import { SAMPLE_CALL_DETAIL } from "./sampleCallDetail";
 
 // fake answers for sample mode. same shape as GET /calls in backend/app/calls_api.py.
 // scores, statuses and labels are typed in as-is, the server decides those, not us
 const SAMPLE: Record<string, unknown> = {
+  "/calls/{id}": SAMPLE_CALL_DETAIL,
   "/calls": {
     summary: {
       calls_reviewed: 48,
@@ -73,13 +75,19 @@ const SAMPLE: Record<string, unknown> = {
   },
 };
 
+// every /calls/{n} gets the one sample call; the query string doesn't matter
+export function sampleKey(path: string): string {
+  const bare = path.split("?")[0];
+  return /^\/calls\/\d+$/.test(bare) ? "/calls/{id}" : bare;
+}
+
 // sample mode answers from SAMPLE, otherwise it's a plain fetch to the api
 export function createApiGateway(opts: { apiUrl: string; sampleData: boolean; fetchImpl?: typeof fetch }): ApiGateway {
   return {
     async get<T>(path: string): Promise<T> {
       if (opts.sampleData) {
         // the sample is the same whatever the query string asks for
-        const key = path.split("?")[0];
+        const key = sampleKey(path);
         if (!(key in SAMPLE)) throw new Error(`no sample data for ${path}`);
         return structuredClone(SAMPLE[key]) as T;
       }
