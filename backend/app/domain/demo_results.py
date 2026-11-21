@@ -22,6 +22,14 @@ class SeverityBand:
     max_lost: int | None  # None: no upper bound
 
 
+DEFAULT_SEVERITY_BANDS = (
+    SeverityBand("slip", 1, 5),
+    SeverityBand("inaccuracy", 6, 10),
+    SeverityBand("mistake", 11, 20),
+    SeverityBand("critical", 21, None),
+)
+
+
 @dataclass(frozen=True)
 class ResultsRow:
     demo_id: str

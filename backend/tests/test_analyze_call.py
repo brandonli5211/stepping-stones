@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from app.application.analyze_call import AnalyzeCall
-from app.domain.call_analysis import CallToAnalyze, PromptPreview, build_prompt
+from app.domain.call_analysis import CallToAnalyze, ModelAnalysis, PromptPreview, build_prompt
 
 RULES = Path(__file__).resolve().parents[2] / "docs" / "procedures" / "schema3"
 COMMON = json.loads((RULES / "_common.json").read_text(encoding="utf-8"))
@@ -42,3 +42,10 @@ def test_dry_run():
     assert result == PromptPreview(5, "abc", "pay_bill", build_prompt(COMMON, PAY_BILL, TRANSCRIPT, "Dana"))
     assert "Dana" in result.prompt and "[1] agent: Hi" in result.prompt
     assert model.asked == []
+
+
+def test_live_preview_has_no_persistence_port_or_side_effect():
+    model = FakeModel()
+    result = asyncio.run(AnalyzeCall(calls=FakeCalls(), template=FakeTemplate(), model=model).execute(5))
+    assert isinstance(result, ModelAnalysis)
+    assert model.asked  # FakeCalls deliberately has no save method.
