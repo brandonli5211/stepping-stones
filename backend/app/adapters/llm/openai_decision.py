@@ -32,12 +32,17 @@ class OpenAIDecisionModel:
             response = await asyncio.to_thread(self._post, self.request_body(call, step, minimum_evidence_turn))
         except Exception as error:  # Network and HTTP failures belong at the outer edge.
             raise ModelUnavailable(str(error)) from error
-        return self.parse(response, call)
+        return self.parse(response, call, step)
 
     def request_body(self, call: CallForEvaluation, step: RequiredStep, minimum_evidence_turn: int = 1) -> dict[str, Any]:
+        allowed_turns = (
+            sorted(call.turn_texts)
+            if step.kind == "collection"
+            else call.agent_turn_indices
+        )
         choices = [
             {"value": f"turn:{index}", "description": call.turn_texts[index]}
-            for index in call.agent_turn_indices
+            for index in allowed_turns
             if index >= minimum_evidence_turn and call.turn_texts.get(index)
         ]
         choices.extend((
@@ -47,9 +52,16 @@ class OpenAIDecisionModel:
         questions = [{
             "type": "choice", "name": "step_observation", "choices": choices,
             "instructions": (
-                "Select the single agent turn that proves the procedure step was done. "
-                "Do not infer omitted facts. Choose not_yet_observed only when no turn satisfies it; "
-                "choose unclear for ambiguity or a contradiction."
+                (
+                    "Select the first transcript turn where this value is supplied by either speaker, "
+                    "or where the agent asks for it. Do not judge recorded actions or a later read-back. "
+                    "Choose not_yet_observed only when no turn supplies or requests the value; choose "
+                    "unclear for ambiguity."
+                    if step.kind == "collection"
+                    else "Select the single agent turn that proves the procedure step was done. "
+                    "Do not infer omitted facts. Choose not_yet_observed only when no turn satisfies it; "
+                    "choose unclear for ambiguity or a contradiction."
+                )
             ),
         }]
         logged = {key: (call.logged_actions or {}).get(key) for key in step.logged_action_keys}
@@ -84,7 +96,9 @@ class OpenAIDecisionModel:
             return json.load(response)
 
     @staticmethod
-    def parse(response: dict[str, Any], call: CallForEvaluation) -> StepDecision:
+    def parse(
+        response: dict[str, Any], call: CallForEvaluation, step: RequiredStep | None = None
+    ) -> StepDecision:
         answer = next((item for item in response.get("answers", ()) if item.get("name") == "step_observation"), None)
         if not answer or answer.get("type") == "refusal":
             return StepDecision(UNCLEAR, 0.0, raw_response=response)
@@ -118,7 +132,8 @@ class OpenAIDecisionModel:
         except ValueError:
             return StepDecision(UNCLEAR, confidence, raw_response=response)
         text = call.turn_texts.get(index)
-        if index not in call.agent_turn_indices or not text:
+        allowed_turns = set(call.turn_texts) if step is not None and step.kind == "collection" else set(call.agent_turn_indices)
+        if index not in allowed_turns or not text:
             return StepDecision(UNCLEAR, confidence, raw_response=response)
         return StepDecision(
             "completed_step", confidence, DecisionEvidence(index, text), logged_actions_match=actions_match,

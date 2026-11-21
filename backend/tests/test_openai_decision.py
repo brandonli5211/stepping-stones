@@ -21,6 +21,25 @@ def test_request_does_not_offer_evidence_before_the_procedure_cursor():
     assert values == ["turn:2", "not_yet_observed", "unclear"]
 
 
+def test_collection_request_offers_caller_and_agent_turns():
+    call = CallForEvaluation(7, (), {1: "I need $10", 2: "Anything else?"}, (2,))
+    step = RequiredStep("amount", 5, logged_action_keys=("transfer_amount",))
+    body = OpenAIDecisionModel("test").request_body(call, step)
+    assert [choice["value"] for choice in body["questions"][0]["choices"]] == [
+        "turn:1", "turn:2", "not_yet_observed", "unclear",
+    ]
+    assert "either speaker" in body["questions"][0]["instructions"]
+
+
+def test_collection_response_can_cite_a_caller_turn():
+    call = CallForEvaluation(7, (), {7: "Move $10"}, (), {"transfer_amount": "$10"})
+    step = RequiredStep("amount", 5, logged_action_keys=("transfer_amount",))
+    decision = OpenAIDecisionModel.parse(
+        {"answers": [{"name": "step_observation", "choice": "turn:7", "confidence": .95}]}, call, step
+    )
+    assert decision.evidence == type(decision.evidence)(7, "Move $10")
+
+
 def test_logged_action_check_is_separate_from_the_step_observation():
     call = CallForEvaluation(7, (), {1: "Move $10"}, (1,), {"transfer_amount": "$10"})
     body = OpenAIDecisionModel("test").request_body(
