@@ -20,3 +20,12 @@ def test_required_steps_preserves_sub_checks_for_python_judgment():
     }]})
     assert steps[0].kind == "confirmation"
     assert steps[0].checks[0].fields == ("amount",)
+
+
+def test_required_steps_normalizes_a_singular_system_record_field():
+    steps = required_steps({"steps": [{
+        "key": "state_balance", "points": 50, "sub_checks": [{
+            "key": "balance", "type": "stated_matches_system_record", "points": 50, "field": "account_balance",
+        }],
+    }]})
+    assert steps[0].checks[0].fields == ("account_balance",)

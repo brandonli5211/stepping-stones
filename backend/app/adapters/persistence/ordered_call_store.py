@@ -24,7 +24,8 @@ def required_steps(rules: dict) -> tuple[RequiredStep, ...]:
             row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""), tuple(row.get("logs", ())),
             any(check.get("type") in {"logged_task_type", "logged_matches_request"} for check in row.get("sub_checks", ())),
             tuple(ProcedureCheck(
-                check["key"], check["type"], int(check["points"]), tuple(check.get("fields", ())), check.get("expected")
+                check["key"], check["type"], int(check["points"]),
+                tuple(check.get("fields", ())) or ((check["field"],) if "field" in check else ()), check.get("expected")
             ) for check in row.get("sub_checks", ())),
         )
         for row in rules.get("steps", ())
