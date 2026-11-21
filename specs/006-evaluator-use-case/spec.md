@@ -68,7 +68,7 @@ As a coach, I need every remaining required step to have a final, explainable st
 - **FR-001**: The system MUST evaluate only the next expected required step for a stored call using the relevant agent-turn window, procedure requirements, and applicable logged-action evidence.
 - **FR-002**: The system MUST mark a step completed only when the decision is confident, non-contradictory, and supported by the required evidence.
 - **FR-003**: The system MUST store evidence sufficient for the existing call-detail experience to show why a step was completed, under review, missed, or wrong.
-- **FR-004**: The system MUST preserve low-confidence, contradictory, refused, or malformed decisions as under review; it MUST NOT simultaneously mark them missed.
+- **FR-004**: The system MUST preserve low-confidence, contradictory, refused, or malformed decisions as under review; it MUST NOT simultaneously mark them missed or prevent evaluation of later required steps.
 - **FR-005**: When a call ends, the system MUST finalize every remaining required step according to a documented policy, without leaving later steps unresolved.
 - **FR-006**: The system MUST update stored call and step summaries so existing call-list, call-detail, and progress views remain internally consistent.
 - **FR-007**: The system MUST expose a command-level input boundary and output boundary for selecting calls to analyze, and present a clear command result while leaving the existing UI to read saved results.

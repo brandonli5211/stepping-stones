@@ -18,9 +18,9 @@
 
 ## R3 — Procedure ordering and terminal state
 
-**Decision**: Process one complete call sequentially in one transaction. A confident, non-contradictory decision completes the current step; low-confidence, contradictory, refused, malformed, or unverifiable evidence makes the current step under review. At end of call, every later definitively unobserved step becomes missed.
+**Decision**: Process every required step in procedure order against the complete transcript in one transaction. A confident, non-contradictory decision completes that step; low-confidence, contradictory, refused, malformed, or unverifiable evidence makes that step under review without blocking later steps. At call end, every step independently observed as absent becomes missed.
 
-**Rationale**: This fixes #51's simultaneous missed/review state and guarantees that an ended call has no unexplained later steps.
+**Rationale**: This fixes #51's simultaneous missed/review state without turning later, unevaluated steps into false misses. It also guarantees that every ended-call step has an explicit result.
 
 **Alternatives considered**: Persisting a cursor for live streaming was rejected for this feature because #38 analyzes complete stored calls; it would add a migration and a second lifecycle without user value.
 

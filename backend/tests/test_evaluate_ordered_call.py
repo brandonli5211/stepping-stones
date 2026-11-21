@@ -30,7 +30,7 @@ class Presenter:
         return output
 
 
-def test_ended_call_finalizes_later_steps_after_a_low_confidence_result():
+def test_under_review_step_does_not_prevent_later_steps_from_being_evaluated():
     call = CallForEvaluation(
         7,
         (RequiredStep("greet", 2), RequiredStep("verify", 3), RequiredStep("close", 5)),
@@ -38,17 +38,24 @@ def test_ended_call_finalizes_later_steps_after_a_low_confidence_result():
     )
     store = Store(call)
     output = asyncio.run(EvaluateOrderedCallInteractor(
-        store, Model((StepDecision("completed_step", .79, DecisionEvidence(1, "Welcome")),)), Presenter()
+        store, Model((
+            StepDecision("completed_step", .79, DecisionEvidence(1, "Welcome")),
+            StepDecision("completed_step", .99, DecisionEvidence(1, "Welcome")),
+            StepDecision("not_yet_observed", .99),
+        )), Presenter()
     ).execute(EvaluateOrderedCallInputData(7)))
-    assert [step.status for step in store.saved[1]] == ["under_review", "missed", "missed"]
-    assert (output.under_review, output.missed) == (1, 2)
+    assert [step.status for step in store.saved[1]] == ["under_review", "completed", "missed"]
+    assert (output.completed, output.under_review, output.missed) == (1, 1, 1)
 
 
-def test_ended_call_finalizes_later_steps_after_an_unobserved_step_without_another_model_call():
+def test_missed_step_does_not_prevent_later_steps_from_being_evaluated():
     call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Welcome"})
     store = Store(call)
     output = asyncio.run(EvaluateOrderedCallInteractor(
-        store, Model((StepDecision("not_yet_observed", .99),)), Presenter()
+        store, Model((
+            StepDecision("not_yet_observed", .99),
+            StepDecision("completed_step", .99, DecisionEvidence(1, "Welcome")),
+        )), Presenter()
     ).execute(EvaluateOrderedCallInputData(7)))
-    assert [step.status for step in store.saved[1]] == ["missed", "missed"]
-    assert output.missed == 2
+    assert [step.status for step in store.saved[1]] == ["missed", "completed"]
+    assert (output.missed, output.completed) == (1, 1)
