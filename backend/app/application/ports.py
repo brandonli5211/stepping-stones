@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Protocol
 
 from app.domain.call_analysis import CallToAnalyze
+from app.domain.call_detail import CallRecord as CallDetailRecord
 from app.domain.call_list import CallRecord, CallWindow, ListFilter, WeekTotals
 from app.domain.demo_results import ScoredCall, StoredCall
 
@@ -86,3 +87,10 @@ class PromptTemplateSource(Protocol):
 class LanguageModel(Protocol):
     async def ask(self, prompt: str, model: str | None) -> tuple[str, str]:
         """(model name, answer text). Raises ModelUnavailable."""
+
+
+class CallDetailReader(Protocol):
+    """Reads one stored call with its turns and step results. Read only."""
+
+    async def get(self, call_id: int) -> CallDetailRecord | None:
+        """The call with this id, or None when no call has it."""

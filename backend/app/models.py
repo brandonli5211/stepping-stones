@@ -101,7 +101,7 @@ class Call(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    external_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)  # the call id in the URL
+    external_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)  # the dataset's call id, shown as the reference; URLs use id
     agent_id: Mapped[int] = mapped_column(ForeignKey("agents.id"), nullable=False)
     call_type: Mapped[str] = mapped_column(Text, nullable=False)
     procedure_id: Mapped[int] = mapped_column(ForeignKey("procedures.id"), nullable=False)
