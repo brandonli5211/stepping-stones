@@ -19,7 +19,7 @@
 
 **Primary use case**: `EvaluateOrderedCall` — evaluates every required step in one stored, completed call and atomically saves the resulting coaching state.
 
-The command selects stored calls and passes one numeric call ID to the use case. The use case loads the procedure, transcript turns, and logged-action data through a port; it asks the configured OpenAI Decisions model to choose an evidence turn and, when a step has recorded actions, whether those actions match the caller's transcript. Pure Python validates the selected evidence, applies the confidence threshold, derives status/severity/score, and saves the UI-facing totals in one transaction.
+The command selects stored calls and passes one numeric call ID to the use case. The use case walks the procedure and transcript with separate cursors, loading speaker-labelled turns and recorded actions through a port. It asks the configured OpenAI Decisions model only to cite observable facts (a simple action, a caller-supplied value, or an agent read-back). Pure Python validates citations, compares extracted facts with recorded actions, derives status/severity/score, and saves UI-facing totals in one transaction.
 
 Dependencies point inward: pure ordered-evaluation entities and rules → the interactor with input/output and persistence/model ports → async SQLAlchemy, OpenAI Decisions, command controller, and presenter adapters → command and settings composition. Existing call-detail/list/progress views remain read-only consumers of the saved results.
 
@@ -58,7 +58,7 @@ Dependencies point inward: pure ordered-evaluation entities and rules → the in
 
 **Performance Goals**: one transaction per call; no model call while an API consumer opens a page.
 
-**Constraints**: Python owns status, comparison, score, severity, and flags; model evidence quotes must match a stored turn word-for-word; confidence threshold is a named domain rule; uncertain/contradictory decisions remain under review; the normal stack remains usable without an OpenAI key except for opt-in live adapter checks.
+**Constraints**: Python owns status, comparison, score, severity, and flags; the model only cites facts it can point to; evidence quotes must match a stored turn word-for-word; collection evidence may be from either speaker; confidence threshold is a named domain rule; uncertain/contradictory decisions remain under review; the normal stack remains usable without an OpenAI key except for opt-in live adapter checks.
 
 **Scale/Scope**: all calls, one call type, or one call ID; starts with Transfer money, Replace card, and Check balance.
 

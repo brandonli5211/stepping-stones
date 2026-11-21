@@ -10,15 +10,15 @@
 
 ## R2 — Model responsibility
 
-**Decision**: Use the OpenAI Decisions adapter only for typed observations: an eligible evidence turn, and for steps with recorded actions, a match/mismatch/unclear observation against the caller transcript. Python validates selected quotes and decides statuses, scores, severities, and flags.
+**Decision**: Use the OpenAI Decisions adapter only for typed, cited facts. Simple interaction steps select an agent turn. Collection steps select the first relevant turn from either speaker. Confirmation steps select the read-back turn and field facts. Python validates citations, compares extracted facts with recorded actions, and decides statuses, scores, severities, and flags.
 
-**Rationale**: Decisions returns typed choices rather than arbitrary JSON. Supplying stored agent-turn IDs as choices lets Python retain exact, verifiable evidence rather than trusting model-authored text. The matcher never receives the dataset answer key.
+**Rationale**: Decisions returns typed choices rather than arbitrary JSON. Supplying stored turn IDs and finite field choices lets Python retain exact, verifiable facts rather than trusting a model-made coaching judgment. A caller may supply several values in one turn, so collection choices must not be restricted to agent turns. The matcher never receives the dataset answer key.
 
 **Alternatives considered**: Model-authored scores were rejected because they conflict with server-owned judgment. Local Ollama is intentionally deferred with the rest of #38.
 
 ## R3 — Procedure ordering and terminal state
 
-**Decision**: Process every required step in procedure order against the complete transcript in one transaction. A confident, non-contradictory decision completes that step; low-confidence, contradictory, refused, malformed, or unverifiable evidence makes that step under review without blocking later steps. At call end, every step independently observed as absent becomes missed.
+**Decision**: Process every required step in procedure order against the complete transcript in one transaction using two cursors. A confident fact at turn *k* advances the transcript cursor to *k*; an absent or uncertain result advances only the procedure cursor. This preserves ordering without consuming a caller turn that supplies multiple values. Low-confidence, refused, malformed, or unverifiable facts become under review; a confident absence at call end becomes missed.
 
 **Rationale**: This fixes #51's simultaneous missed/review state without turning later, unevaluated steps into false misses. It also guarantees that every ended-call step has an explicit result.
 

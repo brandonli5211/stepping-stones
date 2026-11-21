@@ -16,7 +16,7 @@ As a coach, I need a call's next required step to be marked complete only when t
 
 **Why this priority**: Accurate completed steps are the foundation for every coaching score, call flag, and progress view.
 
-**Independent Test**: Run analysis for one stored call with a matching agent-turn window and logged action; verify that the expected step becomes completed with its evidence and the next required step becomes current.
+**Independent Test**: Run analysis for one stored call where the caller provides several values in one turn; verify that each collection step may cite that turn, while a later confirmation is judged by deterministic comparisons.
 
 **Acceptance Scenarios**:
 
@@ -65,7 +65,7 @@ As a coach, I need every remaining required step to have a final, explainable st
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST evaluate only the next expected required step for a stored call using the relevant agent-turn window, procedure requirements, and applicable logged-action evidence.
+- **FR-001**: The system MUST scan the transcript and procedure in order. A step starts at the current transcript cursor; a confident fact may advance that cursor, while an absent or uncertain fact advances only the procedure step. One transcript turn MAY support multiple collection facts.
 - **FR-002**: The system MUST mark a step completed only when the decision is confident, non-contradictory, and supported by the required evidence.
 - **FR-003**: The system MUST store evidence sufficient for the existing call-detail experience to show why a step was completed, under review, missed, or wrong.
 - **FR-004**: The system MUST preserve low-confidence, contradictory, refused, or malformed decisions as under review; it MUST NOT simultaneously mark them missed or prevent evaluation of later required steps.
@@ -74,14 +74,14 @@ As a coach, I need every remaining required step to have a final, explainable st
 - **FR-007**: The system MUST expose a command-level input boundary and output boundary for selecting calls to analyze, and present a clear command result while leaving the existing UI to read saved results.
 - **FR-008**: The system MUST make all evaluator state changes atomically; an invalid input or external-decision failure MUST leave stored coaching results unchanged.
 - **FR-009**: The system MUST expose the confidence threshold as a named business rule and test behavior below, at, and above it.
-- **FR-010**: The system MUST use the configured OpenAI Decisions model only for typed observations: an eligible evidence turn and, where a step has a logged-action sub-check, a match/mismatch/unclear observation against the caller transcript. Python rules MUST apply separate evidence and action-confidence policies, then make all step-status, score, severity, and flag judgments.
+- **FR-010**: The system MUST use the configured OpenAI Decisions model only to extract cited facts: simple-step evidence, where a caller value was supplied, and where an agent read-back occurred. Python MUST compare those facts with recorded actions and apply all step-status, score, severity, and flag judgments.
 - **FR-011**: The system MUST reject model evidence whose quote is not found word-for-word in the cited stored turn, and preserve that step for human review.
 - **FR-012**: The system MUST record the model and prompt version that produced a saved evaluation result.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Evaluation request**: One stored call, its current procedure position, an agent-turn window, relevant logged-action evidence, and whether the call has ended.
-- **Step decision**: The Decisions model's typed observation, confidence, and selected stored evidence turn for the current required step.
+- **Evaluation request**: One stored call, its current procedure position, transcript cursor, speaker-labelled turns, relevant recorded actions, and whether the call has ended.
+- **Step decision**: The Decisions model's typed, cited fact observation. It does not contain a completed/wrong/missed judgment.
 - **Step evaluation result**: The saved state transition, review requirement, evidence, and next procedure position returned to the caller.
 - **Call evaluation state**: The durable state needed to identify and finalize the next required step across multiple turn evaluations.
 
