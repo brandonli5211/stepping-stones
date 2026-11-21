@@ -2,9 +2,11 @@ from app.domain.ordered_evaluation import (
     CONFIDENT_ACTION_MATCH_THRESHOLD,
     CONFIDENT_DECISION_THRESHOLD,
     DecisionEvidence,
+    ProcedureCheck,
     RequiredStep,
     StepDecision,
     evaluate_step,
+    evaluate_checks,
     next_transcript_cursor,
     quote_is_in_turn,
 )
@@ -81,3 +83,25 @@ def test_cursor_keeps_a_caller_turn_available_for_multiple_collected_values():
 def test_cursor_does_not_consume_turns_for_absence_or_review():
     assert next_transcript_cursor(7, StepDecision("not_yet_observed", .99), False) == 7
     assert next_transcript_cursor(7, StepDecision("completed_step", .79, DecisionEvidence(9, "bye")), True) == 7
+
+
+def test_python_compares_cited_request_readback_and_logged_values():
+    checks = (
+        ProcedureCheck("logged", "logged_matches_request", 35, ("source", "destination")),
+        ProcedureCheck("read_back_source", "read_back_matches_request", 5, ("source",)),
+        ProcedureCheck("read_back_destination", "read_back_matches_request", 5, ("destination",)),
+    )
+    outcomes = evaluate_checks(checks, {
+        "request:source": "checking", "request:destination": "savings",
+        "read_back:source": "savings", "read_back:destination": "checking",
+    }, {"source": "savings", "destination": "checking"})
+    assert [(outcome.key, outcome.points_lost, outcome.under_review) for outcome in outcomes] == [
+        ("logged", 35, False), ("read_back_source", 5, False), ("read_back_destination", 5, False),
+    ]
+
+
+def test_missing_fact_is_review_not_a_guess():
+    outcome = evaluate_checks(
+        (ProcedureCheck("logged", "logged_matches_request", 20, ("account",)),), {}, {"account": "checking"}
+    )[0]
+    assert outcome.under_review and outcome.points_lost == 0

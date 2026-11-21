@@ -6,6 +6,7 @@ The model supplies observations; Python owns the saved coaching judgment.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Mapping
 from typing import Literal
 
 CONFIDENT_DECISION_THRESHOLD = 0.80
@@ -23,6 +24,13 @@ class ProcedureCheck:
     points: int
     fields: tuple[str, ...] = ()
     expected: str | None = None
+
+
+@dataclass(frozen=True)
+class CheckOutcome:
+    key: str
+    points_lost: int
+    under_review: bool = False
 
 
 @dataclass(frozen=True)
@@ -64,6 +72,7 @@ class StepDecision:
     contradictory: bool = False
     logged_actions_match: bool | None = True
     action_confidence: float | None = None
+    facts: Mapping[str, str] | None = None
     raw_response: dict | None = None
 
 
@@ -110,6 +119,46 @@ def next_transcript_cursor(
     ):
         return decision.evidence.turn_idx
     return cursor
+
+
+def _normal(value: object) -> str:
+    return " ".join(str(value or "").lower().replace("_", " ").split())
+
+
+def evaluate_checks(
+    checks: tuple[ProcedureCheck, ...], facts: Mapping[str, str], logged_actions: Mapping[str, object]
+) -> tuple[CheckOutcome, ...]:
+    """Apply procedure comparisons in Python after the model cites facts.
+
+    Fact keys are ``request:<field>`` and ``read_back:<field>``. Missing
+    required facts are reviewable, rather than being guessed as failures.
+    """
+    outcomes = []
+    for check in checks:
+        if check.kind == "logged_task_type":
+            passed = _normal(logged_actions.get("task_type")) == _normal(check.expected)
+            outcomes.append(CheckOutcome(check.key, 0 if passed else check.points))
+            continue
+        if check.kind == "confirmation_evidence":
+            # The cited evidence itself is validated by the caller.
+            continue
+        if check.kind == "logged_matches_request":
+            pairs = [(facts.get(f"request:{field}"), logged_actions.get(field)) for field in check.fields]
+        elif check.kind == "read_back_matches_request":
+            pairs = [(facts.get(f"request:{field}"), facts.get(f"read_back:{field}")) for field in check.fields]
+        elif check.kind == "stated_matches_system_record":
+            field = check.fields[0] if check.fields else ""
+            pairs = [(facts.get(f"read_back:{field}"), logged_actions.get(field))]
+        else:
+            outcomes.append(CheckOutcome(check.key, check.points, under_review=True))
+            continue
+        if any(left is None or right is None for left, right in pairs):
+            outcomes.append(CheckOutcome(check.key, 0, under_review=True))
+        elif all(_normal(left) == _normal(right) for left, right in pairs):
+            outcomes.append(CheckOutcome(check.key, 0))
+        else:
+            outcomes.append(CheckOutcome(check.key, check.points))
+    return tuple(outcomes)
 
 
 def evaluate_step(
