@@ -17,6 +17,8 @@ from app.domain.ordered_evaluation import CallForEvaluation, DecisionEvidence, R
 
 NOT_YET_OBSERVED = "not_yet_observed"
 UNCLEAR = "unclear"
+NOT_STATED = "not_stated"
+DIFFERENT_VALUE = "different_value"
 
 
 class OpenAIDecisionModel:
@@ -65,15 +67,17 @@ class OpenAIDecisionModel:
             ),
         }]
         logged = {key: (call.logged_actions or {}).get(key) for key in step.logged_action_keys}
-        if step.checks_logged_actions:
-            questions.append({
-                "type": "choice", "name": "logged_actions_match", "choices": [
-                    {"value": "match", "description": "Every recorded value agrees with what the caller requested."},
-                    {"value": "mismatch", "description": "At least one recorded value conflicts with the caller's request or is absent."},
-                    {"value": UNCLEAR, "description": "The transcript cannot establish the requested value."},
-                ],
-                "instructions": "Compare these recorded form values to the caller's own transcript, not to any outside answer key.",
-            })
+        if step.kind == "confirmation":
+            fields = sorted({field for check in step.checks for field in check.fields})
+            for field in fields:
+                choices = self._fact_choices(field, (call.logged_actions or {}).get(field))
+                questions.extend(({
+                    "type": "choice", "name": f"request:{field}", "choices": choices,
+                    "instructions": "Select the value the caller requested. Do not judge whether it matches a record.",
+                }, {
+                    "type": "choice", "name": f"read_back:{field}", "choices": choices,
+                    "instructions": "Select the value the agent said back. Do not judge whether it is correct.",
+                }))
         return {
             "model": self._model,
             "input": [{"role": "user", "content": [{"type": "input_json", "data": {
@@ -86,6 +90,22 @@ class OpenAIDecisionModel:
             }}]}],
             "questions": questions,
         }
+
+    @staticmethod
+    def _fact_choices(field: str, logged: object) -> list[dict[str, str]]:
+        """Finite literals let Decisions report a fact instead of a judgment."""
+        key = field.lower()
+        if "account" in key:
+            values = ("checking", "savings")
+        elif "card" in key:
+            values = ("debit", "credit")
+        elif key == "day":
+            values = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+        else:
+            values = (str(logged), DIFFERENT_VALUE) if logged not in (None, "") else (DIFFERENT_VALUE,)
+        return ([{"value": value, "description": value} for value in values]
+                + [{"value": NOT_STATED, "description": "The value is not stated."},
+                   {"value": UNCLEAR, "description": "The value is ambiguous."}])
 
     def _post(self, body: dict[str, Any]) -> dict[str, Any]:
         request = Request(
@@ -107,25 +127,18 @@ class OpenAIDecisionModel:
             confidence = float(answer.get("confidence", 0.0))
         except (TypeError, ValueError):
             confidence = 0.0
-        action_answer = next((item for item in response.get("answers", ()) if item.get("name") == "logged_actions_match"), None)
-        actions_match: bool | None = True
-        action_confidence: float | None = None
-        if action_answer is not None:
-            if action_answer.get("type") == "refusal" or action_answer.get("choice") == UNCLEAR:
-                actions_match = None
-            else:
-                actions_match = action_answer.get("choice") == "match"
-            try:
-                action_confidence = float(action_answer.get("confidence", 0.0))
-            except (TypeError, ValueError):
-                actions_match = None
+        facts = {
+            item["name"]: item.get("choice")
+            for item in response.get("answers", ())
+            if isinstance(item.get("name"), str)
+            and (item["name"].startswith("request:") or item["name"].startswith("read_back:"))
+            and item.get("choice") not in {None, NOT_STATED, UNCLEAR}
+        }
         if choice == NOT_YET_OBSERVED:
-            return StepDecision(choice, confidence, logged_actions_match=actions_match,
-                                action_confidence=action_confidence, raw_response=response)
+            return StepDecision(choice, confidence, facts=facts, raw_response=response)
         if choice == UNCLEAR or not isinstance(choice, str) or not choice.startswith("turn:"):
             return StepDecision(
-                UNCLEAR, confidence, logged_actions_match=actions_match,
-                action_confidence=action_confidence, raw_response=response,
+                UNCLEAR, confidence, facts=facts, raw_response=response,
             )
         try:
             index = int(choice.removeprefix("turn:"))
@@ -136,6 +149,5 @@ class OpenAIDecisionModel:
         if index not in allowed_turns or not text:
             return StepDecision(UNCLEAR, confidence, raw_response=response)
         return StepDecision(
-            "completed_step", confidence, DecisionEvidence(index, text), logged_actions_match=actions_match,
-            action_confidence=action_confidence, raw_response=response,
+            "completed_step", confidence, DecisionEvidence(index, text), facts=facts, raw_response=response,
         )

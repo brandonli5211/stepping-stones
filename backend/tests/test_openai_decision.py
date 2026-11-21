@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from app.adapters.llm.openai_decision import OpenAIDecisionModel
-from app.domain.ordered_evaluation import CallForEvaluation, RequiredStep
+from app.domain.ordered_evaluation import CallForEvaluation, ProcedureCheck, RequiredStep
 
 
 CALL = CallForEvaluation(7, (), {1: "Welcome to Harper Valley", 2: "How can I help?"}, (1, 2))
@@ -40,31 +40,28 @@ def test_collection_response_can_cite_a_caller_turn():
     assert decision.evidence == type(decision.evidence)(7, "Move $10")
 
 
-def test_logged_action_check_is_separate_from_the_step_observation():
+def test_confirmation_requests_request_and_readback_facts_not_a_correctness_judgment():
     call = CallForEvaluation(7, (), {1: "Move $10"}, (1,), {"transfer_amount": "$10"})
     body = OpenAIDecisionModel("test").request_body(
-        call, RequiredStep("log", 5, logged_action_keys=("transfer_amount",), checks_logged_actions=True)
+        call, RequiredStep("log", 5, logged_action_keys=("transfer_amount",), checks=(
+            ProcedureCheck("logged", "logged_matches_request", 5, ("transfer_amount",)),
+        ))
     )
-    assert [question["name"] for question in body["questions"]] == ["step_observation", "logged_actions_match"]
+    assert [question["name"] for question in body["questions"]] == [
+        "step_observation", "request:transfer_amount", "read_back:transfer_amount",
+    ]
     assert body["input"][0]["content"][0]["data"]["procedure_step"]["logged_actions"] == {"transfer_amount": "$10"}
 
 
-def test_action_confidence_is_not_folded_into_the_evidence_confidence():
+def test_confirmation_response_parses_facts_without_a_model_correctness_judgment():
     response = {"answers": [
-        {"name": "step_observation", "choice": "turn:1", "confidence": .54},
-        {"name": "logged_actions_match", "choice": "mismatch", "confidence": .96},
+        {"name": "step_observation", "choice": "turn:1", "confidence": .94},
+        {"name": "request:source", "choice": "checking", "confidence": .96},
+        {"name": "read_back:source", "choice": "savings", "confidence": .96},
     ]}
     decision = OpenAIDecisionModel.parse(response, CALL)
-    assert (decision.confidence, decision.logged_actions_match, decision.action_confidence) == (.54, False, .96)
-
-
-def test_confident_action_mismatch_survives_an_unclear_evidence_choice():
-    response = {"answers": [
-        {"name": "step_observation", "choice": "unclear", "confidence": .18},
-        {"name": "logged_actions_match", "choice": "mismatch", "confidence": .89},
-    ]}
-    decision = OpenAIDecisionModel.parse(response, CALL)
-    assert (decision.choice, decision.logged_actions_match, decision.action_confidence) == ("unclear", False, .89)
+    assert decision.confidence == .94
+    assert decision.facts == {"request:source": "checking", "read_back:source": "savings"}
 
 
 def test_selected_turn_becomes_exact_stored_evidence():
