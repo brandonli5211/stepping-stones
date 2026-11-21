@@ -120,5 +120,7 @@ class StepDecisionModel(Protocol):
 class OrderedCallSelector(Protocol):
     """Finds stored, complete calls for the offline evaluator command."""
 
-    async def eligible_call_ids(self, call_type: str | None = None) -> tuple[int, ...]:
-        """Return pending/scored call ids, optionally restricted to an assigned call type."""
+    async def eligible_call_ids(
+        self, call_type: str | None = None, call_id: int | None = None, include_existing: bool = False
+    ) -> tuple[int, ...]:
+        """Return pending calls by default; existing results require explicit opt-in."""

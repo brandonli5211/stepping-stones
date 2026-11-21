@@ -5,10 +5,11 @@ Runs the ordered evaluator against completed stored calls and saves results befo
 ## Invocation
 
 ```text
-uv run analyze [--call-id ID | --call-type TYPE | --all]
+uv run analyze [--call-id ID | --call-type TYPE | --all] [--force]
 ```
 
-Exactly one selector is required. `--all` evaluates all eligible calls. The command performs no analysis at page-load time.
+Exactly one selector is required. By default all selectors evaluate only `pending` calls. `--force` is required to replace
+an existing `scored` or `needs_review` result. The command performs no analysis at page-load time.
 
 ## Success output
 
@@ -24,3 +25,4 @@ Unknown selections, missing procedure/turn data, model failures, malformed decis
 - Under-review results have no missed flag.
 - Ended calls account for every required step.
 - Existing `GET /calls` and `GET /calls/{id}` responses expose the saved result without invoking the model.
+- The separate experimental `POST /calls/{id}` Ollama preview route does not persist a result; this command is the sole evaluator writer.

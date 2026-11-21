@@ -21,6 +21,7 @@ def parse_args(argv: Sequence[str] | None = None):
     selectors.add_argument("--call-id", type=int)
     selectors.add_argument("--call-type")
     selectors.add_argument("--all", action="store_true")
+    parser.add_argument("--force", action="store_true", help="allow replacing an existing scored or review result")
     return parser.parse_args(argv)
 
 
@@ -32,13 +33,14 @@ async def _run(args) -> list[dict[str, int]]:
     session = await anext(source)
     try:
         store = SqlAlchemyOrderedCallStore(session)
-        if args.call_id is not None:
-            call_ids = (args.call_id,)
-        else:
-            call_ids = await store.eligible_call_ids(args.call_type)
-            # SQLAlchemy opens a read transaction for the selector query. End it before
-            # beginning the independent all-or-nothing transaction for each call.
-            await session.rollback()
+        call_ids = await store.eligible_call_ids(
+            call_type=args.call_type, call_id=args.call_id, include_existing=args.force,
+        )
+        # SQLAlchemy opens a read transaction for the selector query. End it before
+        # beginning the independent all-or-nothing transaction for each call.
+        await session.rollback()
+        if args.call_id is not None and not call_ids:
+            raise ValueError(f"call {args.call_id} is not pending; use --force to replace its existing result")
         model = OpenAIDecisionModel(api_key, os.environ.get("OPENAI_BASE_URL", "https://api.openai.com"))
         presenter = AnalyzePresenter()
         outputs: list[dict[str, int]] = []
