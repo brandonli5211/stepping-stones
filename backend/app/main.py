@@ -8,6 +8,7 @@ from app.adapters.http.analyze import router as analyze_router
 from app.adapters.http.call_detail import router as call_detail_router
 from app.adapters.http.calls import router as list_calls_router
 from app.adapters.http.health import router as health_router
+from app.adapters.http.procedures import router as procedures_router
 from app.infrastructure.analysis_settings import analysis_adapters_from_env
 from app.infrastructure.clock import clock_from_env
 
@@ -37,3 +38,4 @@ app.include_router(health_router)
 app.include_router(list_calls_router)
 app.include_router(analyze_router)
 app.include_router(call_detail_router)
+app.include_router(procedures_router)
