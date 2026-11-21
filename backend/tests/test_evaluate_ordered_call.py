@@ -20,8 +20,10 @@ class Store:
 class Model:
     def __init__(self, decisions):
         self.decisions = iter(decisions)
+        self.minimum_evidence_turns = []
 
-    async def decide(self, call, step):
+    async def decide(self, call, step, minimum_evidence_turn):
+        self.minimum_evidence_turns.append(minimum_evidence_turn)
         return next(self.decisions)
 
 
@@ -59,3 +61,16 @@ def test_missed_step_does_not_prevent_later_steps_from_being_evaluated():
     ).execute(EvaluateOrderedCallInputData(7)))
     assert [step.status for step in store.saved[1]] == ["missed", "completed"]
     assert (output.missed, output.completed) == (1, 1)
+
+
+def test_later_step_cannot_use_evidence_before_an_earlier_step():
+    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Bye", 2: "Welcome"})
+    store = Store(call)
+    model = Model((
+        StepDecision("completed_step", .99, DecisionEvidence(2, "Welcome")),
+        StepDecision("completed_step", .99, DecisionEvidence(1, "Bye")),
+    ))
+    output = asyncio.run(EvaluateOrderedCallInteractor(store, model, Presenter()).execute(EvaluateOrderedCallInputData(7)))
+    assert model.minimum_evidence_turns == [1, 2]
+    assert [step.status for step in store.saved[1]] == ["completed", "under_review"]
+    assert output.under_review == 1

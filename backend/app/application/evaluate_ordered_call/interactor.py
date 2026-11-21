@@ -19,10 +19,13 @@ class EvaluateOrderedCallInteractor:
         if call is None:
             raise LookupError(f"no call with id {data.call_id}")
         results = []
+        minimum_evidence_turn = 1
         for step in call.steps:
-            decision = await self.model.decide(call, step)
-            evidence_valid = decision.evidence is not None and quote_is_in_turn(
-                decision.evidence.quote, call.turn_texts.get(decision.evidence.turn_idx, "")
+            decision = await self.model.decide(call, step, minimum_evidence_turn)
+            evidence_valid = (
+                decision.evidence is not None
+                and decision.evidence.turn_idx >= minimum_evidence_turn
+                and quote_is_in_turn(decision.evidence.quote, call.turn_texts.get(decision.evidence.turn_idx, ""))
             )
             result = evaluate_step(step, decision, evidence_valid, call.call_ended)
             if result is None:
@@ -30,6 +33,8 @@ class EvaluateOrderedCallInteractor:
                 # may stop here and resume later without treating it as a miss.
                 continue
             results.append(result)
+            if evidence_valid and decision.evidence is not None:
+                minimum_evidence_turn = decision.evidence.turn_idx
         if call.call_ended and len(results) != len(call.steps):
             raise ValueError("complete-call evaluation requires one result for every procedure step")
         await self.store.save_evaluation(call, tuple(results))

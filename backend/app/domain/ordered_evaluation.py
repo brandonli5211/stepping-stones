@@ -82,8 +82,3 @@ def evaluate_step(
                              decision.confidence, decision.raw_response)
     return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence,
                          decision.confidence, decision.raw_response)
-
-
-def finalize_remaining(steps: tuple[RequiredStep, ...]) -> tuple[EvaluatedStep, ...]:
-    """An ended call has a missed result for each definitively unseen later step."""
-    return tuple(EvaluatedStep(step.key, "missed", step.points, 0, None) for step in steps)

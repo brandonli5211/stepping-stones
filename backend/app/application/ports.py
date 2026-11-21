@@ -113,8 +113,8 @@ class OrderedCallStore(Protocol):
 class StepDecisionModel(Protocol):
     """Returns extracted facts for one required procedure step; it never decides stored status."""
 
-    async def decide(self, call: CallForEvaluation, step: RequiredStep) -> StepDecision:
-        """Return a structured observation, or raise ModelUnavailable."""
+    async def decide(self, call: CallForEvaluation, step: RequiredStep, minimum_evidence_turn: int) -> StepDecision:
+        """Return an observation whose evidence is no earlier than the supplied procedure cursor."""
 
 
 class OrderedCallSelector(Protocol):

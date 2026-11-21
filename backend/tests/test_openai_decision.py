@@ -15,6 +15,12 @@ def test_request_offers_only_stored_agent_turns_and_safe_fallbacks():
     assert values == ["turn:1", "turn:2", "not_yet_observed", "unclear"]
 
 
+def test_request_does_not_offer_evidence_before_the_procedure_cursor():
+    body = OpenAIDecisionModel("test").request_body(CALL, RequiredStep("close", 5), minimum_evidence_turn=2)
+    values = [choice["value"] for choice in body["questions"][0]["choices"]]
+    assert values == ["turn:2", "not_yet_observed", "unclear"]
+
+
 def test_logged_action_check_is_separate_from_the_step_observation():
     call = CallForEvaluation(7, (), {1: "Move $10"}, (1,), {"transfer_amount": "$10"})
     body = OpenAIDecisionModel("test").request_body(call, RequiredStep("log", 5, logged_action_keys=("transfer_amount",)))

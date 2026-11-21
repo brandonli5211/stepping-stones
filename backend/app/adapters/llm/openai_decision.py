@@ -27,18 +27,18 @@ class OpenAIDecisionModel:
         self._url = f"{base_url.rstrip('/')}/v1/decisions"
         self._model = model
 
-    async def decide(self, call: CallForEvaluation, step: RequiredStep) -> StepDecision:
+    async def decide(self, call: CallForEvaluation, step: RequiredStep, minimum_evidence_turn: int) -> StepDecision:
         try:
-            response = await asyncio.to_thread(self._post, self.request_body(call, step))
+            response = await asyncio.to_thread(self._post, self.request_body(call, step, minimum_evidence_turn))
         except Exception as error:  # Network and HTTP failures belong at the outer edge.
             raise ModelUnavailable(str(error)) from error
         return self.parse(response, call)
 
-    def request_body(self, call: CallForEvaluation, step: RequiredStep) -> dict[str, Any]:
+    def request_body(self, call: CallForEvaluation, step: RequiredStep, minimum_evidence_turn: int = 1) -> dict[str, Any]:
         choices = [
             {"value": f"turn:{index}", "description": call.turn_texts[index]}
             for index in call.agent_turn_indices
-            if call.turn_texts.get(index)
+            if index >= minimum_evidence_turn and call.turn_texts.get(index)
         ]
         choices.extend((
             {"value": NOT_YET_OBSERVED, "description": "No listed agent turn satisfies this step."},
@@ -65,7 +65,8 @@ class OpenAIDecisionModel:
         return {
             "model": self._model,
             "input": [{"role": "user", "content": [{"type": "input_json", "data": {
-                "procedure_step": {"key": step.key, "name": step.name, "done_when": step.done_when, "logged_actions": logged},
+                "procedure_step": {"key": step.key, "name": step.name, "done_when": step.done_when,
+                                   "minimum_evidence_turn": minimum_evidence_turn, "logged_actions": logged},
                 "transcript": [
                     {"turn": index, "speaker": "agent" if index in call.agent_turn_indices else "caller", "text": text}
                     for index, text in sorted(call.turn_texts.items())

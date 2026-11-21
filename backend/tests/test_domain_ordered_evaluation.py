@@ -4,7 +4,6 @@ from app.domain.ordered_evaluation import (
     RequiredStep,
     StepDecision,
     evaluate_step,
-    finalize_remaining,
     quote_is_in_turn,
 )
 
@@ -51,5 +50,4 @@ def test_unobserved_step_waits_until_call_end_then_is_missed_with_the_remaining_
     # Negative observations have no quote; that is distinct from bad evidence.
     assert evaluate_step(STEP, StepDecision("not_yet_observed", .99), False) is None
     result = evaluate_step(STEP, StepDecision("not_yet_observed", .99), False, call_ended=True)
-    remaining = finalize_remaining((RequiredStep("close", 3), RequiredStep("log", 8)))
-    assert result.status == "missed" and [step.key for step in remaining] == ["close", "log"]
+    assert result.status == "missed"

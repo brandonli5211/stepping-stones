@@ -6,14 +6,14 @@
 | --- | --- | --- |
 | Analysis selection | All calls, one call type, or one numeric call ID | Exactly one selection mode; unknown IDs are reported without partial save. |
 | Evaluated call | Call identity, procedure rules, ordered turns, stored logged actions, and existing steps | Procedure and steps must exist; turns must identify speakers and indexes. |
-| Procedure step | Key, position, points, completion requirements, logged-action requirements, example phrase | Processed only in procedure order. |
+| Procedure step | Key, position, points, completion requirements, logged-action requirements, example phrase | Processed in procedure order; a later accepted evidence turn may not precede the prior valid evidence turn. |
 | Model observation | Current step observation, confidence, quoted turn, extracted facts, coaching, and summary | Choice must be recognized; quote must occur word-for-word in cited stored turn. |
 
 ## State transitions
 
 | Starting condition | Observation | Saved state |
 | --- | --- | --- |
-| Current expected step | Confident, non-contradictory, verified observation with matching required actions | `completed`, evidence saved, continue to next step |
+| Current expected step | Confident, non-contradictory, verified in-order observation with matching required actions | `completed`, evidence saved, advance the evidence cursor |
 | Current expected step | Confident observation with mismatching logged actions | `wrong`, comparison/detail/coaching saved |
 | Current expected step | Low confidence, contradiction, refusal, malformed output, or invalid quote | `under_review`, review evidence/points saved; never also `missed` |
 | Ended call, later unevaluated step | No supporting observation | `missed`, with the procedure-defined loss/detail |
