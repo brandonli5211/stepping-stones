@@ -7,6 +7,7 @@ the command controller wraps load/evaluate/save in one transaction.
 from __future__ import annotations
 
 from collections import Counter
+from dataclasses import asdict
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,11 +22,12 @@ def required_steps(rules: dict) -> tuple[RequiredStep, ...]:
     """Map persisted schema3 rule rows to the evaluator's small domain record."""
     return tuple(
         RequiredStep(
-            row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""), tuple(row.get("logs", ())),
-            any(check.get("type") in {"logged_task_type", "logged_matches_request"} for check in row.get("sub_checks", ())),
-            tuple(ProcedureCheck(
-                check["key"], check["type"], int(check["points"]),
-                tuple(check.get("fields", ())) or ((check["field"],) if "field" in check else ()), check.get("expected")
+            row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""),
+            logged_action_keys=tuple(row.get("logs", ())),
+            checks=tuple(ProcedureCheck(
+                key=check["key"], kind=check["type"], points=int(check["points"]),
+                fields=(check["field"],) if "field" in check else tuple(check.get("fields", ())),
+                expected=check.get("expected"), description=check.get("description", ""),
             ) for check in row.get("sub_checks", ())),
         )
         for row in rules.get("steps", ())
@@ -63,12 +65,21 @@ class SqlAlchemyOrderedCallStore:
         turns = (await self._session.execute(
             select(CallTurn.idx, CallTurn.speaker, CallTurn.text).where(CallTurn.call_id == call_id).order_by(CallTurn.idx)
         )).all()
+        fields = row.rules.get("fields", ())
+        task = (row.raw_metadata.get("tasks") or [{}])[0]
+        system_record = {
+            field["key"]: task.get(field["system_record"]["dataset_metadata_key"])
+            for field in fields if field.get("role") == "told_to_caller" and field.get("reference") == "system_record"
+        }
         return CallForEvaluation(
             id=row.id,
             steps=required_steps(row.rules),
             turn_texts={turn.idx: turn.text for turn in turns},
             agent_turn_indices=tuple(turn.idx for turn in turns if turn.speaker == "agent"),
             logged_actions=last_logged_actions(row.raw_metadata),
+            field_types={field["key"]: field["type"] for field in fields},
+            field_hints={field["key"]: field.get("model_hint", "") for field in fields},
+            system_record=system_record,
             # This offline command evaluates persisted, completed call records only.
             call_ended=True,
         )
@@ -102,9 +113,13 @@ class SqlAlchemyOrderedCallStore:
             step.decision_confidence = result.decision_confidence
             step.decision_response = result.decision_response
             step.sub_checks = [
-                {"key": outcome.key, "points_lost": outcome.points_lost, "under_review": outcome.under_review}
-                for outcome in result.check_outcomes
+                {"key": check.key, "description": check.description, "points": check.points, "status": check.result}
+                for check in result.check_outcomes
             ]
+            step.comparison = [asdict(row) for row in result.comparison] or None
+            failed = [check.description for check in result.check_outcomes if check.result == "failed"]
+            step.detail = ("Failed checks: " + ". ".join(failed)) if failed else None
+            step.coaching = None
         counts = Counter(step.status for step in steps)
         points_lost = sum(step.points_lost for step in steps)
         points_total = sum(step.points for step in evaluation.steps)
@@ -114,5 +129,7 @@ class SqlAlchemyOrderedCallStore:
         call.steps_wrong = counts["wrong"]
         call.steps_under_review = counts["under_review"]
         call.points_lost = points_lost
-        call.status = "needs_review" if counts["under_review"] else "scored"
-        call.score = None if counts["under_review"] else round(100 * (points_total - points_lost) / points_total) if points_total else 100
+        needs_review = any(step.points_under_review or step.status == "under_review" for step in steps)
+        call.status = "needs_review" if needs_review else "scored"
+        call.score = None if needs_review else round(100 * (points_total - points_lost) / points_total) if points_total else 100
+        call.summary = None  # A forced run replaces the previous analysis, including its explanation.
