@@ -1,7 +1,9 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { resolveShellView } from "./application";
 import { createApiGateway } from "./gateway";
 import { Card, CardContent } from "./components/ui/card";
+import CallDetailPage from "./callDetail/CallDetailPage";
+import { createCallDetailScreen, parseCallId } from "./callDetail/compose";
 import { PageHeader, StateMessage, StatusLegend, Stone, StoneSprite } from "./components/pieces";
 import CallsPage from "./CallsPage.jsx";
 import { createProgressScreen, parseAgentId } from "./progress/compose";
@@ -19,6 +21,8 @@ const progress = createProgressScreen(api, parseAgentId(import.meta.env.VITE_AGE
 export default function App() {
   const [path, setPath] = useState(window.location.pathname);
   const view = resolveShellView(path, agentSettings);
+  // one call detail screen per call id in the address
+  const callDetail = useMemo(() => createCallDetailScreen(api, parseCallId(view.callId)), [view.callId]);
 
   // back/forward buttons
   useEffect(() => {
@@ -70,10 +74,7 @@ export default function App() {
         {view.screen.id === "my-calls" && <CallsPage />}
 
         {view.screen.id === "call-detail" && (
-          <>
-            <PageHeader title={`Call ${view.callId}`} subtitle="Transcript, steps and score show up here with the call detail ticket." back={{ href: "/", label: "Back to my calls" }} />
-            <Card><CardContent><StateMessage kind="empty" title="Call detail coming soon" /></CardContent></Card>
-          </>
+          <CallDetailPage key={view.callId} viewModel={callDetail.viewModel} controller={callDetail.controller} />
         )}
 
         {view.screen.id === "progress" && <ProgressPage viewModel={progress.viewModel} controller={progress.controller} />}

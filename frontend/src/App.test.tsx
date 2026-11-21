@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import App from "./App";
+import { SAMPLE_CALL_DETAIL } from "./sampleCallDetail";
 
 // no real api in tests. calls page and progress both just get a failed fetch
 beforeEach(() => {
@@ -20,11 +21,26 @@ test("menu click switches screen and marked item", async () => {
   expect(marked()).toBe("Procedures");
 });
 
-test("call detail shows the call and keeps my calls marked", () => {
+test("call detail shows the call and keeps my calls marked", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => SAMPLE_CALL_DETAIL }));
+  window.history.pushState(null, "", "/calls/1");
+  render(<App />);
+  expect(await screen.findByRole("heading", { name: "Transfer money" })).toBeTruthy();
+  expect(String(vi.mocked(fetch).mock.calls[0][0])).toMatch(/\/calls\/1$/);
+  expect(marked()).toBe("My calls");
+});
+
+test("call detail with an id that can't be a call shows not found without asking the api", async () => {
+  window.history.pushState(null, "", "/calls/abc");
+  render(<App />);
+  expect(await screen.findByRole("heading", { name: "Call not found" })).toBeTruthy();
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+test("call detail shows the error when the api is down", async () => {
   window.history.pushState(null, "", "/calls/7");
   render(<App />);
-  expect(screen.getByRole("heading", { name: "Call 7" })).toBeTruthy();
-  expect(marked()).toBe("My calls");
+  expect((await screen.findByRole("alert")).textContent).toContain("Couldn't load this call");
 });
 
 test("unknown address shows my calls", async () => {
