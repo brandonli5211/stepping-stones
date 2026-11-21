@@ -24,6 +24,7 @@ export type CallDetailReadyState = {
   header: { title: string; reference: string; backHref: string; backLabel: string };
   score: {
     value: number | null;
+    outOfText: string; // "of 100"
     band: ScoreBand | null;
     bandLabel: string; // "Focus here" or "Not scored yet"
     stepsText: string; // "6 of 7"

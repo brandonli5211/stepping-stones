@@ -90,6 +90,7 @@ export class ViewCallDetailPresenter implements ViewCallDetailOutputBoundary {
     const band = scoreBand(score.score);
     return {
       value: score.score,
+      outOfText: `of ${score.outOf}`,
       band,
       bandLabel: band ? BAND_LABELS[band] : "Not scored yet",
       stepsText: `${score.stepsDoneRight} of ${score.stepsTotal} steps done right${score.provisional ? " so far" : ""}`,

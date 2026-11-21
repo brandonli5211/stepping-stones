@@ -68,7 +68,7 @@ test("the sample call: header, score panel and flag", () => {
   const state = present(sample());
   expect(state.header).toEqual({ title: "Transfer money", reference: "a2f086d27b3a4f96", backHref: "/", backLabel: "Back to my calls" });
   expect(state.score).toMatchObject({
-    value: 45, band: "focus_here", bandLabel: "Focus here", stepsText: "6 of 7 steps done right",
+    value: 45, outOfText: "of 100", band: "focus_here", bandLabel: "Focus here", stepsText: "6 of 7 steps done right",
     lostText: "1 critical, 55 points lost", reviewText: null, provisional: false,
   });
   expect(state.flags).toEqual({
