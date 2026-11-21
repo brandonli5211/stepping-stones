@@ -14,3 +14,9 @@ export async function fetchCalls({ callType, hasMissed, limit = 10 } = {}) {
   if (!response.ok) throw new Error(`GET /calls failed (${response.status})`);
   return response.json();
 }
+
+export async function fetchProcedures() {
+  const response = await fetch(`${API_URL}/procedures`);
+  if (!response.ok) throw new Error(`GET /procedures failed (${response.status})`);
+  return response.json();
+}
