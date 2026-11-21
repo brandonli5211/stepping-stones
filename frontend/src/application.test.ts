@@ -1,4 +1,4 @@
-import { resolveShellView } from "./application";
+import { ApiError, resolveShellView } from "./application";
 
 test("each address opens its screen and marks the right menu item", () => {
   const cases: [string, string, string][] = [
@@ -27,4 +27,11 @@ test("unknown addresses fall back to my calls", () => {
 test("agent shows as configured, or 'Agent' with no role when unset", () => {
   expect(resolveShellView("/", { name: "Robert", role: "Agent" }).agent).toEqual({ name: "Robert", role: "Agent" });
   expect(resolveShellView("/", { name: "", role: "" }).agent).toEqual({ name: "Agent", role: null });
+});
+
+test("ApiError keeps its status and message", () => {
+  const error = new ApiError(500, "GET /x failed (500)");
+  expect(error.status).toBe(500);
+  expect(error.message).toBe("GET /x failed (500)");
+  expect(error.name).toBe("ApiError");
 });

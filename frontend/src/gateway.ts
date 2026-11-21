@@ -1,4 +1,4 @@
-import type { ApiGateway } from "./application";
+import { ApiError, type ApiGateway } from "./application";
 
 // fake answers for sample mode. same shape as GET /calls in backend/app/calls_api.py.
 // scores, statuses and labels are typed in as-is, the server decides those, not us
@@ -84,7 +84,7 @@ export function createApiGateway(opts: { apiUrl: string; sampleData: boolean; fe
         return structuredClone(SAMPLE[key]) as T;
       }
       const res = await (opts.fetchImpl ?? fetch)(`${opts.apiUrl}${path}`);
-      if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
+      if (!res.ok) throw new ApiError(res.status, `GET ${path} failed (${res.status})`);
       return res.json() as Promise<T>;
     },
   };

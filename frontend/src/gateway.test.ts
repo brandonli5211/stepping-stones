@@ -1,3 +1,4 @@
+import { ApiError } from "./application";
 import { createApiGateway } from "./gateway";
 
 type Calls = { calls: { score: number }[] };
@@ -26,4 +27,13 @@ test("real mode rejects when the api says no", async () => {
   const fetchImpl = vi.fn().mockResolvedValue(new Response("", { status: 500 }));
   const api = createApiGateway({ apiUrl: "http://api", sampleData: false, fetchImpl });
   await expect(api.get("/calls")).rejects.toThrow("GET /calls failed (500)");
+});
+
+test("an error status rejects with an ApiError that carries the status", async () => {
+  const fetchImpl = vi.fn().mockResolvedValue(new Response("", { status: 404 }));
+  const api = createApiGateway({ apiUrl: "http://api", sampleData: false, fetchImpl });
+  const error = await api.get("/calls/9").catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(ApiError);
+  expect(error).toBeInstanceOf(Error);
+  expect((error as ApiError).status).toBe(404);
 });

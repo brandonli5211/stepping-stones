@@ -3,6 +3,14 @@ import { MENU, SCREENS, type AgentProfile, type MenuItem, type Screen } from "./
 // the port screens use to get data. gateway.ts is the thing that actually does it
 export type ApiGateway = { get<T>(path: string): Promise<T> };
 
+// what the gateway throws when the api answers with an error status, so a screen can tell 404 from a failure
+export class ApiError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export type ShellView = {
   screen: Screen;
   callId: string | null;
