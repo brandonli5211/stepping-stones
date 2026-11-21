@@ -12,10 +12,16 @@ def snake(text: Any) -> str:
     return "_".join(str(text).strip().lower().split())
 
 
+def last_logged_actions(metadata: dict) -> dict[str, Any]:
+    """The final submitted form values, keyed like procedure fields. Never reads the dataset answer key."""
+    responses = ((metadata.get("agent") or {}).get("responses") or [])
+    submissions = [row.get("data") for row in responses if row.get("data")]
+    return {snake(key): value for key, value in (submissions[-1] if submissions else {}).items()}
+
+
 def parse_call(transcript: list[dict], metadata: dict) -> dict:
     agent = metadata.get("agent") or {}
-    submissions = [r for r in agent.get("responses") or [] if r.get("data")]
-    logged = {snake(k): v for k, v in (submissions[-1]["data"] if submissions else {}).items()}  # last submission counts
+    logged = last_logged_actions(metadata)
     logged_type = logged.pop("task_type", None)
     assigned = {snake(k): v for k, v in ((metadata.get("tasks") or [{}])[0]).items()}
     assigned_type = assigned.pop("task_type", None)

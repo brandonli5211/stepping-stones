@@ -1,5 +1,5 @@
-"""POST /calls/{call_id}: build the coaching prompt for one stored call and either return it (dry_run) or send it
-to the local model. Translates the request, delegates to AnalyzeCall, and maps its errors to HTTP status codes.
+"""POST /calls/{call_id}: build a prompt for one stored call and either return it (dry_run) or preview a local-model
+answer. This experimental route never writes call_steps or call aggregates; the ordered evaluator command owns those writes.
 
 Settings (RULES_DIR, OLLAMA_HOST, OLLAMA_MODEL, OLLAMA_TIMEOUT) are read once in app.main.
 """
@@ -39,7 +39,7 @@ async def get_analyze_call(request: Request, session: AsyncSession = Depends(get
 @router.post("/calls/{call_id}")
 async def analyze_call(call_id: int, body: AnalyzeRequest | None = None,
                        use_case: AnalyzeCall = Depends(get_analyze_call)) -> dict:
-    """call_id is our own call id: the `id` that GET /calls returns."""
+    """Return a non-persisting preview for our own numeric call id."""
     body = body or AnalyzeRequest()
     try:
         result = await use_case.execute(call_id, model_name=body.model, dry_run=body.dry_run)
