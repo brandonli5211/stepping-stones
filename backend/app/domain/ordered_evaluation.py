@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 CONFIDENT_DECISION_THRESHOLD = 0.80
+CONFIDENT_ACTION_MATCH_THRESHOLD = 0.70
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,7 @@ class RequiredStep:
     name: str = ""
     done_when: str = ""
     logged_action_keys: tuple[str, ...] = ()
+    checks_logged_actions: bool = False
 
 
 @dataclass(frozen=True)
@@ -31,7 +33,8 @@ class StepDecision:
     confidence: float
     evidence: DecisionEvidence | None = None
     contradictory: bool = False
-    logged_actions_match: bool = True
+    logged_actions_match: bool | None = True
+    action_confidence: float | None = None
     raw_response: dict | None = None
 
 
@@ -68,8 +71,25 @@ def evaluate_step(
     # An observed completion must cite exact evidence.  A negative observation
     # intentionally has no quote and is valid unless it is low-confidence or
     # explicitly contradictory.
+    action_is_uncertain = (
+        decision.logged_actions_match is None
+        or (decision.action_confidence is not None and decision.action_confidence < CONFIDENT_ACTION_MATCH_THRESHOLD)
+    )
+    action_is_confident_mismatch = (
+        decision.logged_actions_match is False
+        and decision.action_confidence is not None
+        and decision.action_confidence >= CONFIDENT_ACTION_MATCH_THRESHOLD
+    )
+    if action_is_confident_mismatch:
+        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence,
+                             decision.confidence, decision.raw_response)
     completion_lacks_evidence = decision.choice == "completed_step" and not evidence_valid
-    review = decision.confidence < CONFIDENT_DECISION_THRESHOLD or decision.contradictory or completion_lacks_evidence
+    review = (
+        decision.confidence < CONFIDENT_DECISION_THRESHOLD
+        or decision.contradictory
+        or action_is_uncertain
+        or completion_lacks_evidence
+    )
     if review or decision.choice not in {"completed_step", "not_yet_observed"}:
         return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence,
                              decision.confidence, decision.raw_response)
@@ -77,8 +97,5 @@ def evaluate_step(
         return None
     if decision.choice == "not_yet_observed":
         return EvaluatedStep(step.key, "missed", step.points, 0, None, decision.confidence, decision.raw_response)
-    if not decision.logged_actions_match:
-        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence,
-                             decision.confidence, decision.raw_response)
     return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence,
                          decision.confidence, decision.raw_response)

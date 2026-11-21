@@ -1,4 +1,5 @@
 from app.domain.ordered_evaluation import (
+    CONFIDENT_ACTION_MATCH_THRESHOLD,
     CONFIDENT_DECISION_THRESHOLD,
     DecisionEvidence,
     RequiredStep,
@@ -42,8 +43,19 @@ def test_contradiction_invalid_evidence_and_bad_choice_stay_under_review():
 
 
 def test_completed_observation_with_mismatched_logged_action_is_wrong():
-    result = evaluate_step(STEP, StepDecision("completed_step", .99, logged_actions_match=False), True)
+    result = evaluate_step(
+        STEP, StepDecision("completed_step", .99, logged_actions_match=False,
+                           action_confidence=CONFIDENT_ACTION_MATCH_THRESHOLD), True
+    )
     assert result.status == "wrong" and result.points_lost == 5
+
+
+def test_uncertain_action_check_stays_under_review_but_does_not_lower_evidence_confidence():
+    result = evaluate_step(
+        STEP, StepDecision("completed_step", .99, DecisionEvidence(2, "Welcome"), logged_actions_match=True,
+                           action_confidence=CONFIDENT_ACTION_MATCH_THRESHOLD - .01), True
+    )
+    assert result.status == "under_review" and result.decision_confidence == .99
 
 
 def test_unobserved_step_waits_until_call_end_then_is_missed_with_the_remaining_steps():

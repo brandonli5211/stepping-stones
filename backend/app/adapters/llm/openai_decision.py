@@ -53,7 +53,7 @@ class OpenAIDecisionModel:
             ),
         }]
         logged = {key: (call.logged_actions or {}).get(key) for key in step.logged_action_keys}
-        if step.logged_action_keys:
+        if step.checks_logged_actions:
             questions.append({
                 "type": "choice", "name": "logged_actions_match", "choices": [
                     {"value": "match", "description": "Every recorded value agrees with what the caller requested."},
@@ -94,23 +94,33 @@ class OpenAIDecisionModel:
         except (TypeError, ValueError):
             confidence = 0.0
         action_answer = next((item for item in response.get("answers", ()) if item.get("name") == "logged_actions_match"), None)
-        actions_unknown = action_answer is not None and (action_answer.get("type") == "refusal" or action_answer.get("choice") == UNCLEAR)
-        actions_match = action_answer is None or action_answer.get("choice") == "match"
+        actions_match: bool | None = True
+        action_confidence: float | None = None
         if action_answer is not None:
+            if action_answer.get("type") == "refusal" or action_answer.get("choice") == UNCLEAR:
+                actions_match = None
+            else:
+                actions_match = action_answer.get("choice") == "match"
             try:
-                confidence = min(confidence, float(action_answer.get("confidence", 0.0)))
+                action_confidence = float(action_answer.get("confidence", 0.0))
             except (TypeError, ValueError):
-                confidence = 0.0
+                actions_match = None
         if choice == NOT_YET_OBSERVED:
-            return StepDecision(choice, confidence, contradictory=actions_unknown, logged_actions_match=actions_match,
-                                raw_response=response)
+            return StepDecision(choice, confidence, logged_actions_match=actions_match,
+                                action_confidence=action_confidence, raw_response=response)
         if choice == UNCLEAR or not isinstance(choice, str) or not choice.startswith("turn:"):
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
+            return StepDecision(
+                UNCLEAR, confidence, logged_actions_match=actions_match,
+                action_confidence=action_confidence, raw_response=response,
+            )
         try:
             index = int(choice.removeprefix("turn:"))
         except ValueError:
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
+            return StepDecision(UNCLEAR, confidence, raw_response=response)
         text = call.turn_texts.get(index)
         if index not in call.agent_turn_indices or not text:
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
-        return StepDecision("completed_step", confidence, DecisionEvidence(index, text), actions_unknown, actions_match, response)
+            return StepDecision(UNCLEAR, confidence, raw_response=response)
+        return StepDecision(
+            "completed_step", confidence, DecisionEvidence(index, text), logged_actions_match=actions_match,
+            action_confidence=action_confidence, raw_response=response,
+        )

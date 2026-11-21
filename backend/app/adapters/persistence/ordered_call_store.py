@@ -11,6 +11,8 @@ from collections import Counter
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.call_parse import last_logged_actions
+from app.domain.demo_results import DEFAULT_SEVERITY_BANDS, severity_for
 from app.domain.ordered_evaluation import CallForEvaluation, EvaluatedStep, RequiredStep
 from app.models import Call, CallStep, CallTurn, Procedure
 
@@ -19,22 +21,16 @@ def required_steps(rules: dict) -> tuple[RequiredStep, ...]:
     """Map persisted schema3 rule rows to the evaluator's small domain record."""
     return tuple(
         RequiredStep(
-            row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""), tuple(row.get("logs", ()))
+            row["key"], int(row["points"]), row.get("name", ""), row.get("done_when", ""), tuple(row.get("logs", ())),
+            any(check.get("type") in {"logged_task_type", "logged_matches_request"} for check in row.get("sub_checks", ())),
         )
         for row in rules.get("steps", ())
     )
 
 
 def severity(points_lost: int) -> str:
-    if points_lost <= 0:
-        return "none"
-    if points_lost <= 5:
-        return "slip"
-    if points_lost <= 10:
-        return "inaccuracy"
-    if points_lost <= 20:
-        return "mistake"
-    return "critical"
+    """Use the shared severity bands used by the demo-result scorer."""
+    return severity_for(DEFAULT_SEVERITY_BANDS, points_lost)
 
 
 class SqlAlchemyOrderedCallStore:
@@ -43,10 +39,15 @@ class SqlAlchemyOrderedCallStore:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def eligible_call_ids(self, call_type: str | None = None) -> tuple[int, ...]:
-        query = select(Call.id).where(Call.status.in_(("pending", "scored", "needs_review"))).order_by(Call.id)
+    async def eligible_call_ids(
+        self, call_type: str | None = None, call_id: int | None = None, include_existing: bool = False
+    ) -> tuple[int, ...]:
+        statuses = ("pending", "scored", "needs_review") if include_existing else ("pending",)
+        query = select(Call.id).where(Call.status.in_(statuses)).order_by(Call.id)
         if call_type is not None:
             query = query.where(Call.call_type == call_type)
+        if call_id is not None:
+            query = query.where(Call.id == call_id)
         return tuple((await self._session.execute(query)).scalars())
 
     async def load_for_evaluation(self, call_id: int) -> CallForEvaluation | None:
@@ -63,7 +64,7 @@ class SqlAlchemyOrderedCallStore:
             steps=required_steps(row.rules),
             turn_texts={turn.idx: turn.text for turn in turns},
             agent_turn_indices=tuple(turn.idx for turn in turns if turn.speaker == "agent"),
-            logged_actions=_last_logged_actions(row.raw_metadata),
+            logged_actions=last_logged_actions(row.raw_metadata),
             # This offline command evaluates persisted, completed call records only.
             call_ended=True,
         )
@@ -107,11 +108,3 @@ class SqlAlchemyOrderedCallStore:
         call.points_lost = points_lost
         call.status = "needs_review" if counts["under_review"] else "scored"
         call.score = None if counts["under_review"] else round(100 * (points_total - points_lost) / points_total) if points_total else 100
-
-
-def _last_logged_actions(metadata: dict) -> dict[str, object]:
-    """Read only the agent's final submitted form values, never the dataset answer key."""
-    responses = ((metadata.get("agent") or {}).get("responses") or [])
-    submissions = [row.get("data") for row in responses if row.get("data")]
-    data = submissions[-1] if submissions else {}
-    return {"_".join(str(key).strip().lower().split()): value for key, value in data.items()}

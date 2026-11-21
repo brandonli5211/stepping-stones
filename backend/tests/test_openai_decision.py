@@ -23,9 +23,29 @@ def test_request_does_not_offer_evidence_before_the_procedure_cursor():
 
 def test_logged_action_check_is_separate_from_the_step_observation():
     call = CallForEvaluation(7, (), {1: "Move $10"}, (1,), {"transfer_amount": "$10"})
-    body = OpenAIDecisionModel("test").request_body(call, RequiredStep("log", 5, logged_action_keys=("transfer_amount",)))
+    body = OpenAIDecisionModel("test").request_body(
+        call, RequiredStep("log", 5, logged_action_keys=("transfer_amount",), checks_logged_actions=True)
+    )
     assert [question["name"] for question in body["questions"]] == ["step_observation", "logged_actions_match"]
     assert body["input"][0]["content"][0]["data"]["procedure_step"]["logged_actions"] == {"transfer_amount": "$10"}
+
+
+def test_action_confidence_is_not_folded_into_the_evidence_confidence():
+    response = {"answers": [
+        {"name": "step_observation", "choice": "turn:1", "confidence": .54},
+        {"name": "logged_actions_match", "choice": "mismatch", "confidence": .96},
+    ]}
+    decision = OpenAIDecisionModel.parse(response, CALL)
+    assert (decision.confidence, decision.logged_actions_match, decision.action_confidence) == (.54, False, .96)
+
+
+def test_confident_action_mismatch_survives_an_unclear_evidence_choice():
+    response = {"answers": [
+        {"name": "step_observation", "choice": "unclear", "confidence": .18},
+        {"name": "logged_actions_match", "choice": "mismatch", "confidence": .89},
+    ]}
+    decision = OpenAIDecisionModel.parse(response, CALL)
+    assert (decision.choice, decision.logged_actions_match, decision.action_confidence) == ("unclear", False, .89)
 
 
 def test_selected_turn_becomes_exact_stored_evidence():

@@ -74,7 +74,7 @@ As a coach, I need every remaining required step to have a final, explainable st
 - **FR-007**: The system MUST expose a command-level input boundary and output boundary for selecting calls to analyze, and present a clear command result while leaving the existing UI to read saved results.
 - **FR-008**: The system MUST make all evaluator state changes atomically; an invalid input or external-decision failure MUST leave stored coaching results unchanged.
 - **FR-009**: The system MUST expose the confidence threshold as a named business rule and test behavior below, at, and above it.
-- **FR-010**: The system MUST use the configured OpenAI Decisions model only for typed observations: an eligible evidence turn and, where a step has recorded actions, a match/mismatch/unclear observation against the caller transcript. Python rules MUST validate evidence and make all step-status, score, severity, and flag judgments.
+- **FR-010**: The system MUST use the configured OpenAI Decisions model only for typed observations: an eligible evidence turn and, where a step has a logged-action sub-check, a match/mismatch/unclear observation against the caller transcript. Python rules MUST apply separate evidence and action-confidence policies, then make all step-status, score, severity, and flag judgments.
 - **FR-011**: The system MUST reject model evidence whose quote is not found word-for-word in the cited stored turn, and preserve that step for human review.
 - **FR-012**: The system MUST record the model and prompt version that produced a saved evaluation result.
 
