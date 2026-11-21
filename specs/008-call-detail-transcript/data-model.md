@@ -26,7 +26,7 @@ CallDetailViewState
 └── { kind: "ready",
       header:  { title, reference, backHref: "/", backLabel: "Back to my calls" },
       score:   { value | null, band: "on_track" | "getting_there" | "focus_here" | null, bandLabel,
-                 stepsText ("6 of 7"), lostText ("1 critical, 55 points lost" | null),
+                 stepsText ("6 of 7 steps done right", "… so far" when provisional), lostText ("1 critical, 55 points lost" | null),
                  reviewText ("10 points under review" | null), provisional, summary | null },
       transcript: { countText ("9 turns, verbatim"), empty: boolean,
                     turns: [{ idx, speakerLabel ("Agent" | "Customer"), timeText ("0:33" | null),
