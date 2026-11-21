@@ -1,4 +1,4 @@
-from app.call_parse import _norm, parse_call, snake
+from app.call_parse import _norm, last_logged_actions, parse_call, snake
 
 
 def test_snake_turns_metadata_keys_into_procedure_keys():
@@ -36,3 +36,8 @@ def test_parse_call_uses_the_last_submission_and_the_human_transcript():
     assert call["started_at"].year == 2020
     assert [t["text"] for t in call["turns"]] == ["Hi there", "move fifty"]
     assert [t["start_seconds"] for t in call["turns"]] == [1.5, None]
+
+
+def test_last_logged_actions_reuses_the_same_normalized_final_submission():
+    metadata = {"agent": {"responses": [{"data": {"Transfer Amount": "10"}}, {"data": {"Transfer Amount": "20"}}]}}
+    assert last_logged_actions(metadata) == {"transfer_amount": "20"}

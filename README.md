@@ -67,11 +67,19 @@ uv sync                  # install from backend/uv.lock
 uv run migrate           # apply starting schema (creates app_meta)
 uv run serve             # API on http://localhost:8000
 uv run test              # backend tests
+uv run analyze --call-id 123  # score one completed call with OpenAI Decisions
 ```
 
 `uv sync` installs the locked set in `backend/uv.lock`. `uv sync --frozen` exits non-zero when that lock is missing or no longer matches `backend/pyproject.toml`.
 
 Point `DATABASE_URL` at PostgreSQL 18 before `uv run migrate`. The first migrate creates `app_meta`; a second run exits 0 and does not change the schema. Migrate does not drop data and does not start the API.
+
+`uv run analyze` is an explicit post-call command: it never runs while the UI
+loads a page. It needs `OPENAI_API_KEY`, then accepts exactly one selector:
+`--call-id ID`, `--call-type TYPE`, or `--all`. It writes step results and call
+totals atomically per call. The checked-in JSON under
+`backend/tests/fixtures/openai_decisions/` is test/debug data only; it is never
+loaded into PostgreSQL.
 
 A quick path that starts only the database in Docker, then migrates from the host:
 

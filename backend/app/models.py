@@ -101,7 +101,7 @@ class Call(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    external_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)  # the call id in the URL
+    external_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)  # the dataset's call id, shown as the reference; URLs use id
     agent_id: Mapped[int] = mapped_column(ForeignKey("agents.id"), nullable=False)
     call_type: Mapped[str] = mapped_column(Text, nullable=False)
     procedure_id: Mapped[int] = mapped_column(ForeignKey("procedures.id"), nullable=False)
@@ -177,6 +177,9 @@ class CallStep(Base):
     evidence_turn_idx: Mapped[int | None] = mapped_column(Integer)
     evidence_quote: Mapped[str | None] = mapped_column(Text)  # words from that turn, verified word for word
     coaching: Mapped[str | None] = mapped_column(Text)  # "Next time, say something like ..."
+    # Internal evaluator diagnostics. Kept out of the agent-facing detail API.
+    decision_confidence: Mapped[float | None] = mapped_column()
+    decision_response: Mapped[dict | None] = mapped_column(JSONB)
 
     # Shown only on the step detail panel, never filtered on, so they stay JSON.
     sub_checks: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))  # rows with points lost
