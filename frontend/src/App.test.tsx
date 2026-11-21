@@ -30,6 +30,25 @@ test("call detail shows the call and keeps my calls marked", async () => {
   expect(marked()).toBe("My calls");
 });
 
+test("a call in my calls opens its call detail page", async () => {
+  const list = {
+    summary: { calls_reviewed: 1, weeks: null, this_week: null, first_week_percent: null },
+    calls: [{
+      id: 1, external_id: "a2f086d27b3a4f96", call_type: "transfer_money", call_type_name: "Transfer money",
+      started_at: "2026-10-07T20:48:00Z", status: "scored", score: 45, steps_completed: 6, steps_total: 7, steps: [], result: null,
+    }],
+  };
+  const fetchMock = vi.fn(async (url: string) => ({
+    ok: true, status: 200, json: async () => (new URL(url).pathname === "/calls/1" ? SAMPLE_CALL_DETAIL : list),
+  }));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  fireEvent.click(await screen.findByRole("link", { name: /Transfer money/ }));
+  expect(window.location.pathname).toBe("/calls/1");
+  expect(await screen.findByRole("heading", { name: "Transfer money" })).toBeTruthy();
+  expect(fetchMock.mock.calls.some(([url]) => new URL(url).pathname === "/calls/1")).toBe(true);
+});
+
 test("call detail with an id that can't be a call shows not found without asking the api", async () => {
   window.history.pushState(null, "", "/calls/abc");
   render(<App />);
