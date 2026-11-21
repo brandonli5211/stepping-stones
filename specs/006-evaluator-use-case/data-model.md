@@ -15,12 +15,15 @@
 | --- | --- | --- |
 | Current expected step | Confident, verified in-order fact with matching deterministic checks | `completed`, evidence saved, advance the transcript cursor to the cited turn |
 | Current expected step | Cited request/read-back fact disagrees with recorded actions or procedure values | `wrong`, comparison/detail/coaching saved |
+| Compound step | One check fails while another remains uncertain | `wrong`, only failed-check points lost, unresolved-check points retained under review |
 | Current expected step | Low confidence, contradiction, refusal, malformed output, or invalid quote | `under_review`, review evidence/points saved; never also `missed` |
 | Ended call, later unevaluated step | Confident absence after the current transcript cursor | `missed`, with the procedure-defined loss/detail |
 
 ## Persisted result
 
 The existing `CallStep` record holds status, severity, lost/review points, detail, evidence turn/quote, coaching, sub-check outcomes, and comparisons. A failed sub-check loses only its procedure-defined points; a missing fact is stored as under review. `Call` holds model, prompt version, analysis time, aggregate counts, points, score, and overall status. The persistence adapter updates both inside one transaction.
+
+Persisted sub-check JSON follows the call-detail reader contract, with `key`, `description`, `points`, and `status` (`passed`, `failed`, or `under_review`). Comparison rows carry `field`, `caller_asked`, `logged`, and `match`. A forced analysis replaces both arrays, clears old evidence where unsupported, and clears obsolete seed explanations. Unresolved comparisons are omitted because the existing comparison response has only a Boolean match result.
 
 ## Output
 

@@ -66,14 +66,14 @@ As a coach, I need every remaining required step to have a final, explainable st
 ### Functional Requirements
 
 - **FR-001**: The system MUST scan the transcript and procedure in order. A step starts at the current transcript cursor; a confident fact may advance that cursor, while an absent or uncertain fact advances only the procedure step. One transcript turn MAY support multiple collection facts.
-- **FR-002**: The system MUST mark a step completed only when the decision is confident, non-contradictory, and supported by the required evidence.
+- **FR-002**: The system MUST mark a simple or collection step completed only when its cited observation is confident and verified. A step with sub-checks is completed when every sub-check passes its own evidence requirements.
 - **FR-003**: The system MUST store evidence sufficient for the existing call-detail experience to show why a step was completed, under review, missed, or wrong.
-- **FR-004**: The system MUST preserve low-confidence, contradictory, refused, or malformed decisions as under review; it MUST NOT simultaneously mark them missed or prevent evaluation of later required steps.
+- **FR-004**: The system MUST preserve low-confidence, contradictory, refused, or malformed observations as under review for the affected check. A proven failure in another sub-check MUST retain its own lost points and make the step wrong. Remaining unresolved sub-check points stay under review, and evaluation continues to later steps.
 - **FR-005**: When a call ends, the system MUST finalize every remaining required step according to a documented policy, without leaving later steps unresolved.
 - **FR-006**: The system MUST update stored call and step summaries so existing call-list, call-detail, and progress views remain internally consistent.
 - **FR-007**: The system MUST expose a command-level input boundary and output boundary for selecting calls to analyze, and present a clear command result while leaving the existing UI to read saved results.
 - **FR-008**: The system MUST make all evaluator state changes atomically; an invalid input or external-decision failure MUST leave stored coaching results unchanged.
-- **FR-009**: The system MUST expose the confidence threshold as a named business rule and test behavior below, at, and above it.
+- **FR-009**: The system MUST expose named confidence rules for turn observations (0.80) and field facts (0.70). Refusals, invalid choices, missing confidence, and facts below threshold MUST leave only the affected checks unresolved. The raw response MUST retain each original confidence.
 - **FR-010**: The system MUST use the configured OpenAI Decisions model only to extract cited facts: simple-step evidence, where a caller value was supplied, and where an agent read-back occurred. Python MUST compare those facts with recorded actions and apply all step-status, score, severity, and flag judgments.
 - **FR-011**: The system MUST reject model evidence whose quote is not found word-for-word in the cited stored turn, and preserve that step for human review.
 - **FR-012**: The system MUST record the model and prompt version that produced a saved evaluation result.

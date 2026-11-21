@@ -24,6 +24,12 @@
 
 **Alternatives considered**: Persisting a cursor for live streaming was rejected for this feature because #38 analyzes complete stored calls; it would add a migration and a second lifecycle without user value.
 
+Each sub-check consumes only the facts it requires. A log-only step needs the caller's requested values and metadata. A read-back check needs request and agent field values. A confirmation-evidence check needs a verified agent citation. A system-record check compares the stated value with the private bank record. A low-confidence citation cannot cancel a proven field mismatch. Mixed results retain both confirmed lost points and unresolved review points.
+
+Field answers use a separate 0.70 confidence threshold, while turn observations use 0.80. Account, card, and weekday values have finite choices. Other logged fields offer the recorded literal, an out-of-list value, absence, and uncertainty. Two out-of-list values leave equality unresolved. Balance choices are derived from transcript amounts, with the private system record held in Python.
+
+Confirmation extraction uses up to three sequential Decisions requests. The evidence request and read-back request receive eligible agent turns. The caller-request extraction receives caller turns, with explicit corrections taking precedence over earlier values. Original responses and confidence scores are retained under each request group in the stored debug response.
+
 ## R4 — Stored results
 
 **Decision**: Adapt existing `Call` and `CallStep` columns, including evidence turn/quote, under-review points, comparison data, model, prompt version, and aggregate totals. Save all changes atomically.

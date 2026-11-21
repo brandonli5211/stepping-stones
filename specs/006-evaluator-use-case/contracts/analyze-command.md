@@ -25,4 +25,6 @@ Unknown selections, missing procedure/turn data, model failures, malformed decis
 - Under-review results have no missed flag.
 - Ended calls account for every required step.
 - Existing `GET /calls` and `GET /calls/{id}` responses expose the saved result without invoking the model.
+- Sub-checks retain their procedure descriptions, points, and passed/failed/under-review results. Re-analysis replaces the comparison table with the newly extracted request and logged values.
+- A step with failed and unresolved sub-checks is wrong, with separate lost and review points. The call remains `needs_review` while any review points remain.
 - The separate experimental `POST /calls/{id}` Ollama preview route does not persist a result; this command is the sole evaluator writer.
