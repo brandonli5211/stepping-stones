@@ -26,6 +26,12 @@ def test_confidence_boundary_completes_only_at_or_above_the_named_threshold():
     assert exact.status == "completed" and exact.evidence == evidence
 
 
+def test_evaluation_carries_confidence_and_raw_decision_for_persistence():
+    response = {"answers": [{"name": "step_observation", "choice": "turn:2", "confidence": .91}]}
+    result = evaluate_step(STEP, StepDecision("completed_step", .91, DecisionEvidence(2, "Welcome"), raw_response=response), True)
+    assert result.decision_confidence == .91 and result.decision_response == response
+
+
 def test_contradiction_invalid_evidence_and_bad_choice_stay_under_review():
     for decision, valid in (
         (StepDecision("completed_step", .99, contradictory=True), True),

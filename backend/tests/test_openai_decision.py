@@ -27,6 +27,7 @@ def test_selected_turn_becomes_exact_stored_evidence():
     decision = OpenAIDecisionModel.parse(response, CALL)
     assert decision.choice == "completed_step"
     assert decision.evidence.quote == "Welcome to Harper Valley"
+    assert decision.raw_response == response
 
 
 def test_refusals_and_unknown_turns_become_reviewable_unclear_decisions():

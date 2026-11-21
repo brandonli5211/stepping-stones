@@ -86,7 +86,7 @@ class OpenAIDecisionModel:
     def parse(response: dict[str, Any], call: CallForEvaluation) -> StepDecision:
         answer = next((item for item in response.get("answers", ()) if item.get("name") == "step_observation"), None)
         if not answer or answer.get("type") == "refusal":
-            return StepDecision(UNCLEAR, 0.0)
+            return StepDecision(UNCLEAR, 0.0, raw_response=response)
         choice = answer.get("choice")
         try:
             confidence = float(answer.get("confidence", 0.0))
@@ -101,14 +101,15 @@ class OpenAIDecisionModel:
             except (TypeError, ValueError):
                 confidence = 0.0
         if choice == NOT_YET_OBSERVED:
-            return StepDecision(choice, confidence, contradictory=actions_unknown, logged_actions_match=actions_match)
+            return StepDecision(choice, confidence, contradictory=actions_unknown, logged_actions_match=actions_match,
+                                raw_response=response)
         if choice == UNCLEAR or not isinstance(choice, str) or not choice.startswith("turn:"):
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown)
+            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
         try:
             index = int(choice.removeprefix("turn:"))
         except ValueError:
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown)
+            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
         text = call.turn_texts.get(index)
         if index not in call.agent_turn_indices or not text:
-            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown)
-        return StepDecision("completed_step", confidence, DecisionEvidence(index, text), actions_unknown, actions_match)
+            return StepDecision(UNCLEAR, confidence, contradictory=actions_unknown, raw_response=response)
+        return StepDecision("completed_step", confidence, DecisionEvidence(index, text), actions_unknown, actions_match, response)

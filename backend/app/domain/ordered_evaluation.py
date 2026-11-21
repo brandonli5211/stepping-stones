@@ -32,6 +32,7 @@ class StepDecision:
     evidence: DecisionEvidence | None = None
     contradictory: bool = False
     logged_actions_match: bool = True
+    raw_response: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,8 @@ class EvaluatedStep:
     points_lost: int
     points_under_review: int
     evidence: DecisionEvidence | None
+    decision_confidence: float | None = None
+    decision_response: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -68,14 +71,17 @@ def evaluate_step(
     completion_lacks_evidence = decision.choice == "completed_step" and not evidence_valid
     review = decision.confidence < CONFIDENT_DECISION_THRESHOLD or decision.contradictory or completion_lacks_evidence
     if review or decision.choice not in {"completed_step", "not_yet_observed"}:
-        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence)
+        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence,
+                             decision.confidence, decision.raw_response)
     if decision.choice == "not_yet_observed" and not call_ended:
         return None
     if decision.choice == "not_yet_observed":
-        return EvaluatedStep(step.key, "missed", step.points, 0, None)
+        return EvaluatedStep(step.key, "missed", step.points, 0, None, decision.confidence, decision.raw_response)
     if not decision.logged_actions_match:
-        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence)
-    return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence)
+        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence,
+                             decision.confidence, decision.raw_response)
+    return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence,
+                         decision.confidence, decision.raw_response)
 
 
 def finalize_remaining(steps: tuple[RequiredStep, ...]) -> tuple[EvaluatedStep, ...]:

@@ -177,6 +177,9 @@ class CallStep(Base):
     evidence_turn_idx: Mapped[int | None] = mapped_column(Integer)
     evidence_quote: Mapped[str | None] = mapped_column(Text)  # words from that turn, verified word for word
     coaching: Mapped[str | None] = mapped_column(Text)  # "Next time, say something like ..."
+    # Internal evaluator diagnostics. Kept out of the agent-facing detail API.
+    decision_confidence: Mapped[float | None] = mapped_column()
+    decision_response: Mapped[dict | None] = mapped_column(JSONB)
 
     # Shown only on the step detail panel, never filtered on, so they stay JSON.
     sub_checks: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))  # rows with points lost
