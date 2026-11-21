@@ -1,0 +1,15 @@
+{
+  "answers": [
+    {
+      "type": "choice",
+      "name": "step_observation",
+      "choice": "turn:1",
+      "confidence": 0.93,
+      "probabilities": [
+        {"value": "turn:1", "probability": 0.93},
+        {"value": "not_yet_observed", "probability": 0.05},
+        {"value": "unclear", "probability": 0.02}
+      ]
+    }
+  ]
+}
