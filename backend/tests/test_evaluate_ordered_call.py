@@ -36,7 +36,7 @@ def test_under_review_step_does_not_prevent_later_steps_from_being_evaluated():
     call = CallForEvaluation(
         7,
         (RequiredStep("greet", 2), RequiredStep("verify", 3), RequiredStep("close", 5)),
-        {1: "Welcome"},
+        {1: "Welcome"}, (1,),
     )
     store = Store(call)
     output = asyncio.run(EvaluateOrderedCallInteractor(
@@ -51,7 +51,7 @@ def test_under_review_step_does_not_prevent_later_steps_from_being_evaluated():
 
 
 def test_missed_step_does_not_prevent_later_steps_from_being_evaluated():
-    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Welcome"})
+    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Welcome"}, (1,))
     store = Store(call)
     output = asyncio.run(EvaluateOrderedCallInteractor(
         store, Model((
@@ -64,7 +64,7 @@ def test_missed_step_does_not_prevent_later_steps_from_being_evaluated():
 
 
 def test_later_step_cannot_use_evidence_before_an_earlier_step():
-    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Bye", 2: "Welcome"})
+    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("close", 5)), {1: "Bye", 2: "Welcome"}, (1, 2))
     store = Store(call)
     model = Model((
         StepDecision("completed_step", .99, DecisionEvidence(2, "Welcome")),
@@ -77,7 +77,8 @@ def test_later_step_cannot_use_evidence_before_an_earlier_step():
 
 
 def test_reviewed_evidence_does_not_consume_the_transcript_cursor():
-    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("collect", 3)), {1: "Need $10", 2: "Welcome"})
+    call = CallForEvaluation(7, (RequiredStep("greet", 2), RequiredStep("collect", 3, logged_action_keys=("amount",))),
+                             {1: "Need $10", 2: "Welcome"}, (2,))
     store = Store(call)
     model = Model((
         StepDecision("completed_step", .79, DecisionEvidence(2, "Welcome")),
@@ -87,3 +88,15 @@ def test_reviewed_evidence_does_not_consume_the_transcript_cursor():
     assert model.minimum_evidence_turns == [1, 1]
     assert [step.status for step in store.saved[1]] == ["under_review", "completed"]
     assert output.completed == 1
+
+
+def test_same_caller_turn_can_be_reused_for_collection_but_not_simple_agent_actions():
+    caller_turn = DecisionEvidence(7, "checking to savings")
+    steps = (RequiredStep("from", 5, logged_action_keys=("from",)),
+             RequiredStep("to", 5, logged_action_keys=("to",)), RequiredStep("close", 5))
+    store = Store(CallForEvaluation(7, steps, {7: caller_turn.quote}, ()))
+    model = Model([StepDecision("completed_step", .99, caller_turn)] * 3)
+    output = asyncio.run(EvaluateOrderedCallInteractor(store, model, Presenter()).execute(EvaluateOrderedCallInputData(7)))
+    assert model.minimum_evidence_turns == [1, 7, 7]
+    assert [step.status for step in store.saved[1]] == ["completed", "completed", "under_review"]
+    assert output.completed == 2

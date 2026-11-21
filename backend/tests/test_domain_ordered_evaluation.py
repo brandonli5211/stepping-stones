@@ -1,18 +1,20 @@
+from dataclasses import replace
+
+import pytest
+
 from app.domain.ordered_evaluation import (
-    CONFIDENT_ACTION_MATCH_THRESHOLD,
-    CONFIDENT_DECISION_THRESHOLD,
-    DecisionEvidence,
-    ProcedureCheck,
-    RequiredStep,
-    StepDecision,
-    evaluate_step,
-    evaluate_checks,
-    next_transcript_cursor,
-    quote_is_in_turn,
+    CONFIDENT_DECISION_THRESHOLD, DIFFERENT_VALUE, NOT_STATED,
+    CallForEvaluation, DecisionEvidence, ProcedureCheck, RequiredStep, StepDecision, evaluate_step, quote_is_in_turn,
 )
 
 
-STEP = RequiredStep("greet", 5)
+SIMPLE = RequiredStep("greet", 5)
+CALL = CallForEvaluation(1, (), {2: "Welcome", 9: "savings to checking"}, (2, 9))
+GREETING = StepDecision("completed_step", CONFIDENT_DECISION_THRESHOLD, DecisionEvidence(2, "Welcome"))
+LOG = ProcedureCheck("record", "logged_matches_request", 35, ("source", "destination"), description="Transfer logged")
+READ = ProcedureCheck("source_read_back", "read_back_matches_request", 5, ("source",))
+CONFIRM = ProcedureCheck("confirmed", "confirmation_evidence", 5)
+SUBMIT = RequiredStep("submit", 45, checks=(LOG, READ, CONFIRM))
 
 
 def test_quote_must_appear_word_for_word_in_the_stored_turn():
@@ -21,97 +23,82 @@ def test_quote_must_appear_word_for_word_in_the_stored_turn():
     assert not quote_is_in_turn("", "Welcome")
 
 
-def test_confidence_boundary_completes_only_at_or_above_the_named_threshold():
-    evidence = DecisionEvidence(2, "Welcome")
-    low = evaluate_step(STEP, StepDecision("completed_step", CONFIDENT_DECISION_THRESHOLD - .01, evidence), True)
-    exact = evaluate_step(STEP, StepDecision("completed_step", CONFIDENT_DECISION_THRESHOLD, evidence), True)
-    assert low.status == "under_review" and low.points_under_review == 5
-    assert exact.status == "completed" and exact.evidence == evidence
-
-
-def test_evaluation_carries_confidence_and_raw_decision_for_persistence():
-    response = {"answers": [{"name": "step_observation", "choice": "turn:2", "confidence": .91}]}
-    result = evaluate_step(STEP, StepDecision("completed_step", .91, DecisionEvidence(2, "Welcome"), raw_response=response), True)
-    assert result.decision_confidence == .91 and result.decision_response == response
-
-
-def test_contradiction_invalid_evidence_and_bad_choice_stay_under_review():
-    for decision, valid in (
-        (StepDecision("completed_step", .99, contradictory=True), True),
-        (StepDecision("completed_step", .99), False),
-        (StepDecision("refusal", .99), True),
-    ):
-        result = evaluate_step(STEP, decision, valid)
-        assert result.status == "under_review" and result.points_lost == 0 and result.points_under_review == 5
-
-
-def test_completed_observation_with_mismatched_logged_action_is_wrong():
-    result = evaluate_step(
-        STEP, StepDecision("completed_step", .99, logged_actions_match=False,
-                           action_confidence=CONFIDENT_ACTION_MATCH_THRESHOLD), True
+def test_simple_step_confidence_boundary_and_saved_diagnostics():
+    response = {"answers": []}
+    confident = replace(GREETING, raw_response=response)
+    result = evaluate_step(SIMPLE, confident, True, CALL)
+    assert (result.status, result.evidence, result.decision_confidence, result.decision_response) == (
+        "completed", GREETING.evidence, CONFIDENT_DECISION_THRESHOLD, response,
     )
-    assert result.status == "wrong" and result.points_lost == 5
+    assert evaluate_step(SIMPLE, replace(GREETING, confidence=.79), True, CALL).status == "under_review"
 
 
-def test_uncertain_action_check_stays_under_review_but_does_not_lower_evidence_confidence():
-    result = evaluate_step(
-        STEP, StepDecision("completed_step", .99, DecisionEvidence(2, "Welcome"), logged_actions_match=True,
-                           action_confidence=CONFIDENT_ACTION_MATCH_THRESHOLD - .01), True
+@pytest.mark.parametrize(("decision", "valid"), [
+    (replace(GREETING, contradictory=True), True), (GREETING, False), (StepDecision("refusal", .99), True),
+])
+def test_unverified_observations_do_not_publish_evidence_or_lose_points(decision, valid):
+    result = evaluate_step(SIMPLE, decision, valid, CALL)
+    assert (result.status, result.points_lost, result.points_under_review, result.evidence) == (
+        "under_review", 0, 5, None,
     )
-    assert result.status == "under_review" and result.decision_confidence == .99
 
 
-def test_unobserved_step_waits_until_call_end_then_is_missed_with_the_remaining_steps():
-    # Negative observations have no quote; that is distinct from bad evidence.
-    assert evaluate_step(STEP, StepDecision("not_yet_observed", .99), False) is None
-    result = evaluate_step(STEP, StepDecision("not_yet_observed", .99), False, call_ended=True)
-    assert result.status == "missed"
+def test_unobserved_simple_step_is_only_missed_after_call_end():
+    decision = StepDecision("not_yet_observed", .99)
+    assert evaluate_step(SIMPLE, decision, False, replace(CALL, call_ended=False)) is None
+    assert evaluate_step(SIMPLE, decision, False, CALL).status == "missed"
 
 
-def test_procedure_data_classifies_simple_collection_and_confirmation_steps():
-    assert RequiredStep("greet", 5).kind == "simple"
-    assert RequiredStep("amount", 5, logged_action_keys=("amount",)).kind == "collection"
-    assert RequiredStep("submit", 5, checks_logged_actions=True).kind == "confirmation"
-
-
-def test_cursor_keeps_a_caller_turn_available_for_multiple_collected_values():
-    caller_turn = StepDecision("completed_step", .99, DecisionEvidence(7, "checking to savings"))
-    assert next_transcript_cursor(2, caller_turn, True) == 7
-    assert next_transcript_cursor(7, caller_turn, True) == 7
-
-
-def test_cursor_does_not_consume_turns_for_absence_or_review():
-    assert next_transcript_cursor(7, StepDecision("not_yet_observed", .99), False) == 7
-    assert next_transcript_cursor(7, StepDecision("completed_step", .79, DecisionEvidence(9, "bye")), True) == 7
-
-
-def test_python_compares_cited_request_readback_and_logged_values():
-    checks = (
-        ProcedureCheck("logged", "logged_matches_request", 35, ("source", "destination")),
-        ProcedureCheck("read_back_source", "read_back_matches_request", 5, ("source",)),
-        ProcedureCheck("read_back_destination", "read_back_matches_request", 5, ("destination",)),
-    )
-    outcomes = evaluate_checks(checks, {
-        "request:source": "checking", "request:destination": "savings",
-        "read_back:source": "savings", "read_back:destination": "checking",
-    }, {"source": "savings", "destination": "checking"})
-    assert [(outcome.key, outcome.points_lost, outcome.under_review) for outcome in outcomes] == [
-        ("logged", 35, False), ("read_back_source", 5, False), ("read_back_destination", 5, False),
+def test_clear_swap_and_unresolved_confirmation_have_independent_outcomes():
+    call = replace(CALL, logged_actions={"source": "savings", "destination": "checking"})
+    # Even if another field is uncertain, one known mismatch fails the whole logged-values check.
+    decision = StepDecision("unclear", .18, facts={"request:source": "checking", "read_back:source": "savings"})
+    result = evaluate_step(SUBMIT, decision, False, call)
+    assert (result.status, result.points_lost, result.points_under_review, result.evidence) == ("wrong", 40, 5, None)
+    assert [(c.key, c.result) for c in result.check_outcomes] == [
+        ("record", "failed"), ("source_read_back", "failed"), ("confirmed", "under_review"),
+    ]
+    assert result.check_outcomes[0].description == "Transfer logged"
+    assert [(r.field, r.caller_asked, r.logged, r.match) for r in result.comparison] == [
+        ("source", "checking", "savings", False),
     ]
 
 
-def test_missing_fact_is_review_not_a_guess():
-    outcome = evaluate_checks(
-        (ProcedureCheck("logged", "logged_matches_request", 20, ("account",)),), {}, {"account": "checking"}
-    )[0]
-    assert outcome.under_review and outcome.points_lost == 0
+def test_log_only_step_passes_without_spoken_confirmation():
+    step = RequiredStep("submit", 35, checks=(LOG,))
+    call = replace(CALL, logged_actions={"source": "checking", "destination": "savings"})
+    decision = StepDecision("unclear", 0, facts={"request:source": "checking", "request:destination": "savings"})
+    result = evaluate_step(step, decision, False, call)
+    assert (result.status, result.points_lost, result.points_under_review) == ("completed", 0, 0)
+    assert all(row.match for row in result.comparison)
 
 
-def test_failed_sub_checks_produce_partial_wrong_points_not_a_full_step_loss():
-    checks = (ProcedureCheck("logged", "logged_matches_request", 35, ("source",)),)
-    outcomes = evaluate_checks(checks, {"request:source": "checking"}, {"source": "savings"})
-    result = evaluate_step(
-        RequiredStep("submit", 55), StepDecision("completed_step", .95, DecisionEvidence(9, "read back")), True,
-        check_outcomes=outcomes,
-    )
-    assert (result.status, result.points_lost, result.check_outcomes) == ("wrong", 35, outcomes)
+@pytest.mark.parametrize(("decision", "valid", "expected"), [
+    (GREETING, True, "passed"), (GREETING, False, "under_review"),
+    (StepDecision("not_yet_observed", .99), False, "failed"),
+    (StepDecision("not_yet_observed", .18), False, "under_review"),
+])
+def test_confirmation_evidence_scores_its_own_rubric_item(decision, valid, expected):
+    step = RequiredStep("confirm", 5, checks=(CONFIRM,))
+    assert evaluate_step(step, decision, valid, CALL).check_outcomes[0].result == expected
+
+
+@pytest.mark.parametrize(("asked", "said", "status"), [
+    ("checking", NOT_STATED, "wrong"), ("checking", None, "under_review"),
+    (DIFFERENT_VALUE, DIFFERENT_VALUE, "under_review"), ("checking", DIFFERENT_VALUE, "wrong"),
+])
+def test_absence_uncertainty_and_out_of_list_values_are_distinct(asked, said, status):
+    facts = {"request:source": asked}
+    if said is not None:
+        facts["read_back:source"] = said
+    result = evaluate_step(RequiredStep("read", 5, checks=(READ,)), StepDecision("unclear", 0, facts=facts), False, CALL)
+    assert result.status == status
+
+
+def test_stated_amount_is_compared_to_bank_record_independently_of_form():
+    step = RequiredStep("balance", 40, checks=(ProcedureCheck("stated", "stated_matches_system_record", 40, ("balance",)),))
+    decision = StepDecision("unclear", .18, facts={"read_back:balance": "114"})
+    call = replace(CALL, logged_actions={"balance": "9"}, field_types={"balance": "amount"})
+    assert evaluate_step(step, decision, False, call).status == "under_review"
+    assert evaluate_step(step, decision, False, replace(call, system_record={"balance": "$114.00"})).status == "completed"
+    assert evaluate_step(step, decision, False, replace(call, system_record={"balance": 9})).status == "wrong"

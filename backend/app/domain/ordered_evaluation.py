@@ -5,12 +5,17 @@ The model supplies observations; Python owns the saved coaching judgment.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Mapping
+from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 from typing import Literal
 
+from app.domain.call_detail import ComparisonRow, SubCheck, SubCheckResult
+
 CONFIDENT_DECISION_THRESHOLD = 0.80
-CONFIDENT_ACTION_MATCH_THRESHOLD = 0.70
+CONFIDENT_FACT_THRESHOLD = 0.70
+NOT_STATED = "not_stated"
+DIFFERENT_VALUE = "different_value"
 
 StepKind = Literal["simple", "collection", "confirmation"]
 
@@ -24,13 +29,7 @@ class ProcedureCheck:
     points: int
     fields: tuple[str, ...] = ()
     expected: str | None = None
-
-
-@dataclass(frozen=True)
-class CheckOutcome:
-    key: str
-    points_lost: int
-    under_review: bool = False
+    description: str = ""
 
 
 @dataclass(frozen=True)
@@ -40,7 +39,6 @@ class RequiredStep:
     name: str = ""
     done_when: str = ""
     logged_action_keys: tuple[str, ...] = ()
-    checks_logged_actions: bool = False
     checks: tuple[ProcedureCheck, ...] = ()
 
     @property
@@ -51,7 +49,7 @@ class RequiredStep:
         collection step needs a value supplied by either speaker; all other
         steps are simple agent actions.
         """
-        if self.checks or self.checks_logged_actions:
+        if self.checks:
             return "confirmation"
         if self.logged_action_keys:
             return "collection"
@@ -70,8 +68,6 @@ class StepDecision:
     confidence: float
     evidence: DecisionEvidence | None = None
     contradictory: bool = False
-    logged_actions_match: bool | None = True
-    action_confidence: float | None = None
     facts: Mapping[str, str] | None = None
     raw_response: dict | None = None
 
@@ -85,7 +81,8 @@ class EvaluatedStep:
     evidence: DecisionEvidence | None
     decision_confidence: float | None = None
     decision_response: dict | None = None
-    check_outcomes: tuple[CheckOutcome, ...] = ()
+    check_outcomes: tuple[SubCheck, ...] = ()
+    comparison: tuple[ComparisonRow, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -96,6 +93,9 @@ class CallForEvaluation:
     agent_turn_indices: tuple[int, ...] = ()
     logged_actions: dict[str, object] | None = None
     call_ended: bool = True
+    field_types: dict[str, str] = field(default_factory=dict)
+    field_hints: dict[str, str] = field(default_factory=dict)
+    system_record: dict[str, object] = field(default_factory=dict)
 
 
 def quote_is_in_turn(quote: str, turn_text: str) -> bool:
@@ -103,105 +103,108 @@ def quote_is_in_turn(quote: str, turn_text: str) -> bool:
     return bool(quote) and quote in turn_text
 
 
-def next_transcript_cursor(
-    cursor: int, decision: StepDecision, evidence_valid: bool
-) -> int:
-    """Advance only when a confident cited fact was observed.
-
-    The cursor is deliberately inclusive.  A single caller turn can give the
-    amount, source, and destination, so later collection steps may cite the
-    same turn.  Absence and uncertainty never consume transcript evidence.
-    """
-    if (
-        decision.choice == "completed_step"
-        and evidence_valid
-        and decision.confidence >= CONFIDENT_DECISION_THRESHOLD
-        and decision.evidence is not None
-    ):
-        return decision.evidence.turn_idx
-    return cursor
+def _normalized(value: object, field_type: str) -> str | Decimal:
+    text = " ".join(str(value).casefold().split())
+    if field_type == "amount":
+        try:
+            return Decimal(text.replace("$", "").replace(",", ""))
+        except InvalidOperation:
+            return text
+    if field_type == "phone":
+        return "".join(c for c in text if c.isdigit())
+    if field_type in ("account", "card_type"):
+        return " ".join(w for w in text.split() if w not in {"your", "my", "the", "account", "card"})
+    return text
 
 
-def _normal(value: object) -> str:
-    return " ".join(str(value or "").lower().replace("_", " ").split())
+def _matches(reference: object, actual: object, field_type: str) -> bool | None:
+    """None means the available observations cannot decide equality."""
+    if actual == NOT_STATED:
+        return False
+    if reference in (None, "", NOT_STATED) or actual in (None, ""):
+        return None
+    if reference == actual == DIFFERENT_VALUE:
+        # Two out-of-list values may denote different things.
+        return None
+    if DIFFERENT_VALUE in (reference, actual):
+        return False
+    return _normalized(reference, field_type) == _normalized(actual, field_type)
 
 
-def evaluate_checks(
-    checks: tuple[ProcedureCheck, ...], facts: Mapping[str, str], logged_actions: Mapping[str, object]
-) -> tuple[CheckOutcome, ...]:
-    """Apply procedure comparisons in Python after the model cites facts.
+def _combined(matches: list[bool | None]) -> SubCheckResult:
+    if False in matches:
+        return "failed"
+    if not matches or None in matches:
+        return "under_review"
+    return "passed"
 
-    Fact keys are ``request:<field>`` and ``read_back:<field>``. Missing
-    required facts are reviewable, rather than being guessed as failures.
-    """
-    outcomes = []
-    for check in checks:
-        if check.kind == "logged_task_type":
-            passed = _normal(logged_actions.get("task_type")) == _normal(check.expected)
-            outcomes.append(CheckOutcome(check.key, 0 if passed else check.points))
-            continue
-        if check.kind == "confirmation_evidence":
-            # The cited evidence itself is validated by the caller.
-            continue
+
+def _evaluate_check(
+    check: ProcedureCheck, call: CallForEvaluation, facts: Mapping[str, str],
+    observation: SubCheckResult, comparisons: dict[str, ComparisonRow],
+) -> SubCheckResult:
+    logged = call.logged_actions or {}
+    if check.kind == "confirmation_evidence":
+        return observation
+    if check.kind == "logged_task_type":
+        actual = str(logged.get("task_type") or "").strip().lower().replace(" ", "_")
+        return "passed" if actual == check.expected else "failed"
+
+    matches = []
+    for key in check.fields:
+        requested = facts.get(f"request:{key}")
+        read_back = facts.get(f"read_back:{key}")
+        field_type = call.field_types.get(key, "")
         if check.kind == "logged_matches_request":
-            pairs = [(facts.get(f"request:{field}"), logged_actions.get(field)) for field in check.fields]
+            recorded = logged.get(key)
+            match = False if recorded in (None, "") else _matches(requested, recorded, field_type)
+            # The detail table has a boolean match column. Only publish determinate
+            # comparisons, and never display a choice sentinel as a caller's words.
+            if match is not None and requested not in (None, NOT_STATED):
+                comparisons[key] = ComparisonRow(
+                    key, None if requested == DIFFERENT_VALUE else requested,
+                    None if recorded is None else str(recorded), match,
+                )
         elif check.kind == "read_back_matches_request":
-            pairs = [(facts.get(f"request:{field}"), facts.get(f"read_back:{field}")) for field in check.fields]
+            match = _matches(requested, read_back, field_type)
         elif check.kind == "stated_matches_system_record":
-            field = check.fields[0] if check.fields else ""
-            pairs = [(facts.get(f"read_back:{field}"), logged_actions.get(field))]
+            match = _matches(call.system_record.get(key), read_back, field_type)
         else:
-            outcomes.append(CheckOutcome(check.key, check.points, under_review=True))
-            continue
-        if any(left is None or right is None for left, right in pairs):
-            outcomes.append(CheckOutcome(check.key, 0, under_review=True))
-        elif all(_normal(left) == _normal(right) for left, right in pairs):
-            outcomes.append(CheckOutcome(check.key, 0))
-        else:
-            outcomes.append(CheckOutcome(check.key, check.points))
-    return tuple(outcomes)
+            return "under_review"
+        matches.append(match)
+    return _combined(matches)
 
 
 def evaluate_step(
-    step: RequiredStep, decision: StepDecision, evidence_valid: bool, call_ended: bool = False,
-    check_outcomes: tuple[CheckOutcome, ...] = (),
+    step: RequiredStep, decision: StepDecision, evidence_valid: bool, call: CallForEvaluation,
 ) -> EvaluatedStep | None:
-    """Turn one model observation into a stored step judgment."""
-    # An observed completion must cite exact evidence.  A negative observation
-    # intentionally has no quote and is valid unless it is low-confidence or
-    # explicitly contradictory.
-    action_is_uncertain = (
-        decision.logged_actions_match is None
-        or (decision.action_confidence is not None and decision.action_confidence < CONFIDENT_ACTION_MATCH_THRESHOLD)
+    """Score each rubric item from the evidence needed for that item."""
+    observation: SubCheckResult = "under_review"
+    if not decision.contradictory and decision.confidence >= CONFIDENT_DECISION_THRESHOLD:
+        if decision.choice == "completed_step" and evidence_valid:
+            observation = "passed"
+        elif decision.choice == "not_yet_observed":
+            if not call.call_ended and not step.checks:
+                return None
+            if call.call_ended:
+                observation = "failed"
+
+    comparisons: dict[str, ComparisonRow] = {}
+    outcomes = tuple(
+        SubCheck(check.key, check.description, check.points,
+                 _evaluate_check(check, call, decision.facts or {}, observation, comparisons))
+        for check in step.checks
     )
-    action_is_confident_mismatch = (
-        decision.logged_actions_match is False
-        and decision.action_confidence is not None
-        and decision.action_confidence >= CONFIDENT_ACTION_MATCH_THRESHOLD
+    if outcomes:
+        lost = sum(c.points for c in outcomes if c.result == "failed")
+        pending = sum(c.points for c in outcomes if c.result == "under_review")
+        status = "wrong" if lost else "under_review" if pending else "completed"
+    else:
+        status = {"passed": "completed", "failed": "missed", "under_review": "under_review"}[observation]
+        lost = step.points if status == "missed" else 0
+        pending = step.points if status == "under_review" else 0
+
+    return EvaluatedStep(
+        step.key, status, lost, pending, decision.evidence if observation == "passed" else None,
+        decision.confidence, decision.raw_response, outcomes, tuple(comparisons.values()),
     )
-    if action_is_confident_mismatch:
-        return EvaluatedStep(step.key, "wrong", step.points, 0, decision.evidence,
-                             decision.confidence, decision.raw_response)
-    completion_lacks_evidence = decision.choice == "completed_step" and not evidence_valid
-    review = (
-        decision.confidence < CONFIDENT_DECISION_THRESHOLD
-        or decision.contradictory
-        or action_is_uncertain
-        or completion_lacks_evidence
-    )
-    if review or decision.choice not in {"completed_step", "not_yet_observed"}:
-        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence,
-                             decision.confidence, decision.raw_response)
-    if decision.choice == "not_yet_observed" and not call_ended:
-        return None
-    if decision.choice == "not_yet_observed":
-        return EvaluatedStep(step.key, "missed", step.points, 0, None, decision.confidence, decision.raw_response)
-    if any(outcome.under_review for outcome in check_outcomes):
-        return EvaluatedStep(step.key, "under_review", 0, step.points, decision.evidence,
-                             decision.confidence, decision.raw_response, check_outcomes)
-    points_lost = sum(outcome.points_lost for outcome in check_outcomes)
-    if points_lost:
-        return EvaluatedStep(step.key, "wrong", points_lost, 0, decision.evidence,
-                             decision.confidence, decision.raw_response, check_outcomes)
-    return EvaluatedStep(step.key, "completed", 0, 0, decision.evidence,
-                         decision.confidence, decision.raw_response, check_outcomes)

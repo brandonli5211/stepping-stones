@@ -5,7 +5,7 @@ from app.application.evaluate_ordered_call.input_data import EvaluateOrderedCall
 from app.application.evaluate_ordered_call.output_boundary import EvaluateOrderedCallOutputBoundary
 from app.application.evaluate_ordered_call.output_data import EvaluateOrderedCallOutputData
 from app.application.ports import OrderedCallStore, StepDecisionModel
-from app.domain.ordered_evaluation import evaluate_checks, evaluate_step, next_transcript_cursor, quote_is_in_turn
+from app.domain.ordered_evaluation import evaluate_step, quote_is_in_turn
 
 
 @dataclass(frozen=True)
@@ -25,16 +25,18 @@ class EvaluateOrderedCallInteractor:
             evidence_valid = (
                 decision.evidence is not None
                 and decision.evidence.turn_idx >= transcript_cursor
+                and (step.kind == "collection" or decision.evidence.turn_idx in call.agent_turn_indices)
                 and quote_is_in_turn(decision.evidence.quote, call.turn_texts.get(decision.evidence.turn_idx, ""))
             )
-            check_outcomes = evaluate_checks(step.checks, decision.facts or {}, call.logged_actions or {})
-            result = evaluate_step(step, decision, evidence_valid, call.call_ended, check_outcomes)
+            result = evaluate_step(step, decision, evidence_valid, call)
             if result is None:
                 # This command evaluates complete calls. A future streaming caller
                 # may stop here and resume later without treating it as a miss.
                 continue
             results.append(result)
-            transcript_cursor = next_transcript_cursor(transcript_cursor, decision, evidence_valid)
+            if result.status != "under_review" and result.evidence is not None:
+                # Keep this turn eligible when the caller supplied several values together.
+                transcript_cursor = result.evidence.turn_idx
         if call.call_ended and len(results) != len(call.steps):
             raise ValueError("complete-call evaluation requires one result for every procedure step")
         await self.store.save_evaluation(call, tuple(results))
