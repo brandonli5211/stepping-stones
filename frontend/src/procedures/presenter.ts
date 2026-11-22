@@ -17,7 +17,7 @@ export class ViewProceduresPresenter implements ViewProceduresOutputBoundary {
     const selected = output.procedures.find((item) => item.callType === output.selectedCallType) ?? output.procedures[0];
     this.viewModel.setState({
       kind: "ready",
-      tabs: output.procedures.map((item) => ({ callType: item.callType, name: item.name })),
+      procedures: output.procedures.map((item) => ({ ...item, steps: [...item.steps].sort((left, right) => left.order - right.order) })),
       selectedCallType: selected.callType,
       name: selected.name,
       description: selected.description,

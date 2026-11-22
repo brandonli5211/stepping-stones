@@ -13,5 +13,5 @@ export function parseProcedureType(search: string): string | null {
 export function createProceduresScreen(gateway: ApiGateway) {
   const viewModel = new ProceduresViewModel();
   const interactor = new ViewProceduresInteractor(new ProceduresApi(gateway), new ViewProceduresPresenter(viewModel));
-  return { viewModel, controller: new ViewProceduresController(interactor) };
+  return { viewModel, controller: new ViewProceduresController(interactor, viewModel) };
 }
