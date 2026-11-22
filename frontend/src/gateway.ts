@@ -73,6 +73,19 @@ const SAMPLE: Record<string, unknown> = {
       },
     ],
   },
+  "/procedures": {
+    procedures: [
+      { call_type: "transfer_money", name: "Transfer money", description: "Move money between the caller's accounts safely.", steps: [
+        { key: "greet", order: 1, step_name: "Greet and open", step_description: "Introduce yourself and ask how you can help." },
+        { key: "amount", order: 2, step_name: "Collect amount", step_description: "Confirm the amount to transfer." },
+        { key: "confirm", order: 3, step_name: "Confirm transfer", step_description: "Read back the source, destination and amount." },
+      ] },
+      { call_type: "replace_card", name: "Replace card", description: "Help the caller replace a lost or damaged card.", steps: [
+        { key: "greet", order: 1, step_name: "Greet and open", step_description: "Introduce yourself and ask how you can help." },
+        { key: "verify", order: 2, step_name: "Verify identity", step_description: "Complete the required identity check." },
+      ] },
+    ],
+  },
 };
 
 // every /calls/{n} gets the one sample call; the query string doesn't matter

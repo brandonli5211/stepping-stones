@@ -38,5 +38,4 @@ td.bad { color: var(--red); }
 .stone.done { background: var(--green); }
 .stone.missed { border: 2px solid var(--red); background: #fdecea; }
 .stone.review { border: 2px dashed #9aa7ab; background: transparent; }
-.legend .stone { width: 18px; height: 11px; }
-.legend .stone { border-radius: 50%; }
+.legend .stone { width: 18px; height: 11px; border-radius: 50%; }
