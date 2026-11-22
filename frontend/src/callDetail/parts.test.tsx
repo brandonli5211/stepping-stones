@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { FlagList, ScorePanel, Transcript } from "./parts";
+import { FlagList, ScorePanel, StepList, StepPanel, Transcript } from "./parts";
 import type { CallDetailReadyState } from "./viewModel";
 
 const score: CallDetailReadyState["score"] = {
@@ -73,6 +73,27 @@ test("FlagList cards select their step", () => {
   expect(card.textContent).toContain("Moved it the wrong way.");
   fireEvent.click(card);
   expect(onSelect).toHaveBeenCalledWith("submit");
+});
+
+test("StepList selects a step and says when there are none", () => {
+  const onSelect = vi.fn();
+  const { rerender } = render(<StepList rows={[]} selectedStepKey={null} onSelect={onSelect} />);
+  expect(screen.getByText("No required steps on this call")).toBeTruthy();
+  rerender(<StepList rows={[{ key: "greet_and_open", name: "Greet and open", statusLabel: "Completed", pointsText: "", failed: false }]} selectedStepKey={null} onSelect={onSelect} />);
+  fireEvent.click(screen.getByRole("button", { name: "Required step: Greet and open" }));
+  expect(onSelect).toHaveBeenCalledWith("greet_and_open");
+});
+
+test("StepPanel draws the quote and says when there is no step or no quote", () => {
+  const { rerender } = render(<StepPanel panel={null} />);
+  expect(screen.getByText("Select a step to see what it asked for.")).toBeTruthy();
+  rerender(<StepPanel panel={{
+    key: "close", name: "Close", description: "Thank the caller.", reason: null, statusLabel: "Missed",
+    worthText: "Worth 5 points", lostText: "−5 points", severityLabel: "Slip", subChecks: [],
+    evidence: null, coaching: "Next time, thank them.", comparison: null,
+  }} />);
+  expect(screen.getByText("No quote stored for this step")).toBeTruthy();
+  expect(screen.getByText("Next time, thank them.")).toBeTruthy();
 });
 
 test("FlagList with no flags", () => {

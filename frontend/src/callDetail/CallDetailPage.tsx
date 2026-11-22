@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { PageHeader, StateMessage } from "../components/pieces";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import type { ViewCallDetailController } from "./controller";
-import { FlagList, ScorePanel, Transcript } from "./parts";
+import { FlagList, ScorePanel, StepList, StepPanel, Transcript } from "./parts";
 import type { CallDetailViewModel } from "./viewModel";
 
 const BACK = { href: "/", label: "Back to my calls" };
@@ -60,22 +60,41 @@ export default function CallDetailPage({ viewModel, controller }: {
       <div className="flex flex-col gap-6">
         <Card><CardContent className="pt-6"><ScorePanel score={state.score} /></CardContent></Card>
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <Card>
-            <CardHeader className="flex flex-row items-baseline justify-between gap-4">
-              <CardTitle>Call transcript</CardTitle>
-              <span className="text-sm text-muted">{state.transcript.countText}</span>
-            </CardHeader>
-            <CardContent><Transcript transcript={state.transcript} selectedStepKey={selectedStepKey} /></CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-baseline justify-between gap-4">
-              <CardTitle>Flags</CardTitle>
-              {state.flags.countText && <span className="text-sm font-semibold text-bad">{state.flags.countText}</span>}
-            </CardHeader>
-            <CardContent>
-              <FlagList flags={state.flags} selectedStepKey={selectedStepKey} onSelect={(key) => controller.selectStep(key)} />
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-baseline justify-between gap-4">
+                <CardTitle>Call transcript</CardTitle>
+                <span className="text-sm text-muted">{state.transcript.countText}</span>
+              </CardHeader>
+              <CardContent><Transcript transcript={state.transcript} selectedStepKey={selectedStepKey} /></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-baseline justify-between gap-4">
+                <CardTitle>Flags</CardTitle>
+                {state.flags.countText && <span className="text-sm font-semibold text-bad">{state.flags.countText}</span>}
+              </CardHeader>
+              <CardContent>
+                <FlagList flags={state.flags} selectedStepKey={selectedStepKey} onSelect={(key) => controller.selectStep(key)} />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-baseline justify-between gap-4">
+                <CardTitle>Required steps</CardTitle>
+                <a className="text-sm font-medium text-brand" href={state.steps.procedureHref}>See procedure</a>
+              </CardHeader>
+              <CardContent>
+                <StepList rows={state.steps.rows} selectedStepKey={selectedStepKey} onSelect={(key) => controller.selectStep(key)} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>This step</CardTitle></CardHeader>
+              <CardContent>
+                <StepPanel panel={selectedStepKey ? state.steps.panels[selectedStepKey] ?? null : null} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </>
