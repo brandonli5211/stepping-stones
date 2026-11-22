@@ -21,6 +21,17 @@ test("menu click switches screen and marked item", async () => {
   expect(marked()).toBe("Procedures");
 });
 
+test("a direct procedure address restores its selected task", async () => {
+  const procedures = {
+    procedures: [{ call_type: "replace_card", name: "Replace card", description: "Replace it", steps: [] }],
+  };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(procedures), { status: 200 })));
+  window.history.pushState(null, "", "/procedures?task=replace_card");
+  render(<App />);
+  expect(await screen.findByRole("heading", { name: "Replace card" })).toBeTruthy();
+  expect(screen.getByRole("link", { current: "page" }).textContent).toBe("Procedures");
+});
+
 test("call detail shows the call and keeps my calls marked", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => SAMPLE_CALL_DETAIL }));
   window.history.pushState(null, "", "/calls/1");

@@ -20,15 +20,16 @@ const agentSettings = { name: import.meta.env.VITE_AGENT_NAME, role: import.meta
 const progress = createProgressScreen(api, parseAgentId(import.meta.env.VITE_AGENT_ID));
 
 export default function App() {
-  const [path, setPath] = useState(window.location.pathname);
-  const view = resolveShellView(path, agentSettings);
+  const [location, setLocation] = useState(() => `${window.location.pathname}${window.location.search}${window.location.hash}`);
+  const pathname = location.split(/[?#]/, 1)[0];
+  const view = resolveShellView(pathname, agentSettings);
   // one call detail screen per call id in the address
   const callDetail = useMemo(() => createCallDetailScreen(api, parseCallId(view.callId)), [view.callId]);
-  const procedures = useMemo(() => createProceduresScreen(api), [path]);
+  const procedures = useMemo(() => createProceduresScreen(api), [location]);
 
   // back/forward buttons
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
+    const onPop = () => setLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`);
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -36,10 +37,11 @@ export default function App() {
   // grab clicks on our own links so the page doesn't do a full reload
   const onClick = (e: MouseEvent) => {
     const link = (e.target as HTMLElement).closest("a");
-    if (!link || link.origin !== window.location.origin || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    if (!link || link.origin !== window.location.origin || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
-    window.history.pushState(null, "", link.pathname);
-    setPath(link.pathname);
+    const nextLocation = `${link.pathname}${link.search}${link.hash}`;
+    window.history.pushState(null, "", nextLocation);
+    setLocation(nextLocation);
   };
 
   return (
