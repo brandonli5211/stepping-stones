@@ -5,9 +5,9 @@ import type { ViewCallDetailOutputBoundary } from "./outputBoundary";
 import type { ViewCallDetailOutputData } from "./outputData";
 
 const DETAIL: CallDetail = {
-  callId: 1, externalId: "a2f086d27b3a4f96", callTypeName: "Transfer money", summary: null,
+  callId: 1, externalId: "a2f086d27b3a4f96", callType: "transfer_money", callTypeName: "Transfer money", summary: null,
   score: { score: 45, outOf: 100, stepsDoneRight: 6, stepsTotal: 7, pointsLost: 55, criticalCount: 1, pointsUnderReview: 0, provisional: false },
-  turns: [], flags: [],
+  turns: [], steps: [], flags: [], typeDetails: { type: "transfer_money", fields: [] },
 };
 
 class Presenter implements ViewCallDetailOutputBoundary {

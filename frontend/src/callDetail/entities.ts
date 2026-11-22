@@ -36,12 +36,64 @@ export type Flag = {
   message: string | null;
 };
 
+export type StepStatus = "completed" | "missed" | "wrong" | "under_review";
+
+export type SubCheckResult = "passed" | "failed" | "under_review";
+
+export type FieldResult = "match" | "mismatch" | "reversed";
+
+export type SubCheck = {
+  key: string;
+  description: string;
+  points: number;
+  result: SubCheckResult;
+};
+
+export type StepEvidence = {
+  quote: string;
+  turnIdx: number;
+  startSeconds: number | null;
+};
+
+// one required step, as the server stored it. the page does not decide the result.
+export type Step = {
+  key: string;
+  position: number;
+  name: string;
+  status: StepStatus;
+  severity: Severity;
+  points: number;
+  pointsLost: number;
+  pointsUnderReview: number;
+  description: string | null;
+  detail: string | null;
+  subChecks: SubCheck[];
+  evidence: StepEvidence | null;
+  coaching: string | null;
+};
+
+export type FieldRow = {
+  field: string;
+  label: string;
+  callerAsked: string | null;
+  logged: string | null;
+  result: FieldResult;
+};
+
+export type TypeDetails = {
+  type: string;
+  fields: FieldRow[];
+};
+
 export type CallDetail = {
   callId: number;
   externalId: string;
+  callType: string;
   callTypeName: string;
   summary: string | null;
   score: Score;
   turns: Turn[];
+  steps: Step[];
   flags: Flag[];
+  typeDetails: TypeDetails;
 };

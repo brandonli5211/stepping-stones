@@ -1,5 +1,5 @@
 import type { ScoreBand } from "../domain";
-import type { Severity } from "./entities";
+import type { Severity, StepStatus } from "./entities";
 
 // View Model for the call detail page: exactly what the page draws. The presenter sets it, the page subscribes.
 
@@ -19,6 +19,37 @@ export type TurnView = {
 
 export type FlagCardView = { stepKey: string; title: string; pointsText: string; message: string | null; severity: Severity };
 
+export type StepRowView = {
+  key: string;
+  name: string;
+  status: StepStatus;
+  statusLabel: string;
+  pointsText: string;
+};
+
+export type StepPanelView = {
+  key: string;
+  name: string;
+  description: string | null;
+  reason: string | null;
+  statusLabel: string;
+  worthText: string;
+  lostText: string | null;
+  reviewText: string | null;
+  severityLabel: string | null;
+  subChecks: { description: string; resultLabel: string; pointsText: string }[];
+  evidence: { quote: string; timeText: string | null } | null;
+  coaching: string | null;
+  comparison: { label: string; callerAsked: string; logged: string; resultLabel: string }[] | null;
+};
+
+export type StepsView = {
+  rows: StepRowView[];
+  panels: Record<string, StepPanelView>;
+  procedureHref: string;
+  empty: boolean;
+};
+
 export type CallDetailReadyState = {
   kind: "ready";
   header: { title: string; reference: string; backHref: string; backLabel: string };
@@ -35,6 +66,7 @@ export type CallDetailReadyState = {
   };
   transcript: { countText: string; empty: boolean; turns: TurnView[] };
   flags: { countText: string | null; empty: boolean; cards: FlagCardView[] };
+  steps: StepsView;
 };
 
 export type CallDetailViewState =

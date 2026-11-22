@@ -2,7 +2,7 @@ import { SAMPLE_CALL_DETAIL } from "../sampleCallDetail";
 import { CallDetailApi, type CallDetailDto } from "./api";
 import type { CallDetail, Flag, Note, Score, Turn } from "./entities";
 import { ViewCallDetailOutputData } from "./outputData";
-import { flagCountText, formatTime, isFillerTurn, lostText, turnTone, ViewCallDetailPresenter } from "./presenter";
+import { defaultStepKey, flagCountText, formatTime, isFillerTurn, lostText, procedureHref, stepPanel, stepPointsText, stepRow, stepStatusLabel, turnTone, ViewCallDetailPresenter } from "./presenter";
 import { CallDetailViewModel, LOADING_MESSAGE, type CallDetailReadyState } from "./viewModel";
 
 const turn = (text: string, notes: Note[] = []): Turn => ({ idx: 1, speaker: "agent", startSeconds: 0, text, notes });
@@ -63,6 +63,109 @@ function present(detail: CallDetail): CallDetailReadyState {
   if (state.kind !== "ready") throw new Error(`expected ready, got ${state.kind}`);
   return state;
 }
+
+test("step wording and the default step", () => {
+  expect(stepStatusLabel("completed")).toBe("Completed");
+  expect(stepStatusLabel("missed")).toBe("Missed");
+  expect(stepStatusLabel("wrong")).toBe("Wrong");
+  expect(stepStatusLabel("under_review")).toBe("Under review");
+  expect(stepPointsText(55)).toBe("\u221255 points");
+  expect(stepPointsText(1)).toBe("\u22121 point");
+  expect(stepPointsText(0)).toBe("");
+  const detail = sample();
+  expect(defaultStepKey(detail.steps)).toBe("submit_and_confirm_transfer");
+  expect(defaultStepKey(detail.steps.filter((step) => step.status === "completed"))).toBe("greet_and_open");
+  expect(defaultStepKey([])).toBeNull();
+  expect(procedureHref("transfer_money")).toBe("/procedures?task=transfer_money");
+  expect(procedureHref("Transfer money")).toBe("/procedures");
+});
+
+test("the wrong transfer step shows the quote, the coaching and the reversed accounts", () => {
+  const detail = sample();
+  const step = detail.steps.find((item) => item.key === "submit_and_confirm_transfer");
+  if (!step) throw new Error("missing step");
+  expect(stepRow(step)).toEqual({
+    key: "submit_and_confirm_transfer", name: "Submit and confirm transfer", status: "wrong", statusLabel: "Wrong",
+    pointsText: "\u221255 points",
+  });
+  const panel = stepPanel(step, detail.typeDetails);
+  expect(panel.evidence).toEqual({ quote: "okay and that was from your savings to your checking account", timeText: "0:33" });
+  expect(panel.coaching).toContain("from your checking to your savings");
+  expect(panel.lostText).toBe("\u221255 points");
+  expect(panel.severityLabel).toBe("Critical");
+  expect(panel.subChecks.map((check) => check.resultLabel)).toEqual(["Failed", "Failed"]);
+  expect(panel.comparison).toEqual([
+    { label: "Amount", callerAsked: "114", logged: "114", resultLabel: "Match" },
+    { label: "From", callerAsked: "checking", logged: "savings", resultLabel: "Reversed" },
+    { label: "To", callerAsked: "savings", logged: "checking", resultLabel: "Reversed" },
+  ]);
+});
+
+test("a blank compared value is shown as a dash, and the stored result is not recomputed", () => {
+  const detail = sample();
+  const step = detail.steps.find((item) => item.key === "submit_and_confirm_transfer");
+  if (!step) throw new Error("missing step");
+  const panel = stepPanel(step, {
+    type: "transfer_money",
+    fields: [{ field: "transfer_amount", label: "Amount", callerAsked: null, logged: "  ", result: "mismatch" }],
+  });
+  expect(panel.comparison).toEqual([{ label: "Amount", callerAsked: "\u2014", logged: "\u2014", resultLabel: "Doesn't match" }]);
+});
+
+test("an under-review step stays pending, and a pending sub-check is not a deduction", () => {
+  const detail = sample();
+  const base = detail.steps.find((item) => item.key === "submit_and_confirm_transfer");
+  if (!base) throw new Error("missing step");
+  const pending = {
+    ...base,
+    status: "under_review" as const,
+    pointsLost: 10,
+    pointsUnderReview: 5,
+    subChecks: [{ key: "confirmed", description: "Caller confirmed", points: 5, result: "under_review" as const }],
+  };
+  expect(stepRow(pending)).toMatchObject({ status: "under_review", statusLabel: "Under review", pointsText: "" });
+  const panel = stepPanel(pending, detail.typeDetails);
+  expect(panel.lostText).toBeNull();
+  expect(panel.reviewText).toBe("5 points under review");
+  expect(panel.coaching).toBeNull();
+  expect(panel.comparison).toBeNull();
+  expect(panel.subChecks).toEqual([{ description: "Caller confirmed", resultLabel: "Under review", pointsText: "" }]);
+
+  const mixed = stepPanel({
+    ...base,
+    pointsUnderReview: 1,
+    subChecks: [
+      { key: "logged_matches", description: "Logged values match what the caller asked", points: 40, result: "failed" },
+      { key: "confirmed", description: "Caller confirmed", points: 5, result: "under_review" },
+    ],
+  }, detail.typeDetails);
+  expect(mixed.lostText).toBe("\u221255 points");
+  expect(mixed.reviewText).toBe("1 point under review");
+  expect(mixed.subChecks.map((check) => check.pointsText || check.resultLabel)).toEqual(["\u221240 points", "Under review"]);
+});
+
+test("a completed step shows its quote and no coaching or field table", () => {
+  const detail = sample();
+  const step = detail.steps.find((item) => item.key === "greet_and_open");
+  if (!step) throw new Error("missing step");
+  const panel = stepPanel(step, detail.typeDetails);
+  expect(panel.coaching).toBeNull();
+  expect(panel.comparison).toBeNull();
+  expect(panel.lostText).toBeNull();
+  expect(panel.evidence?.timeText).toBe("0:02");
+  expect(stepPanel(step, { type: "replace_card", fields: [] }).comparison).toBeNull();
+});
+
+test("opening the sample call selects the wrong step", () => {
+  const viewModel = new CallDetailViewModel();
+  new ViewCallDetailPresenter(viewModel).prepareSuccessView(new ViewCallDetailOutputData(sample()));
+  expect(viewModel.selectedStepKey()).toBe("submit_and_confirm_transfer");
+  const state = viewModel.getState();
+  if (state.kind !== "ready") throw new Error(state.kind);
+  expect(state.steps.rows).toHaveLength(7);
+  expect(state.steps.procedureHref).toBe("/procedures?task=transfer_money");
+  expect(state.steps.panels.greet_and_open.coaching).toBeNull();
+});
 
 test("the sample call: header, score panel and flag", () => {
   const state = present(sample());

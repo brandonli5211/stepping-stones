@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ScoreRing, Stone } from "../components/pieces";
-import type { CallDetailReadyState, FlagCardView, TurnLabelView, TurnTone, TurnView } from "./viewModel";
+import type { CallDetailReadyState, FlagCardView, StepPanelView, StepRowView, TurnLabelView, TurnTone, TurnView } from "./viewModel";
 
 // The drawn pieces of the call detail page. They only draw what the view model gives them.
 
@@ -106,5 +106,96 @@ export function FlagList({ flags, selectedStepKey, onSelect }: {
         </li>
       ))}
     </ul>
+  );
+}
+
+export function StepList({ rows, selectedStepKey, onSelect }: {
+  rows: StepRowView[];
+  selectedStepKey: string | null;
+  onSelect: (stepKey: string) => void;
+}) {
+  if (rows.length === 0) return <p className="py-2 text-muted">No required steps on this call</p>;
+  return (
+    <ol className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <li key={row.key}>
+          <button
+            type="button"
+            className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left ${selectedStepKey === row.key ? "border-brand ring-2 ring-brand" : "border-review/40"} ${row.status === "missed" || row.status === "wrong" ? "bg-bad-soft" : "bg-white"}`}
+            aria-label={`Required step: ${row.name}`}
+            aria-pressed={selectedStepKey === row.key}
+            onClick={() => onSelect(row.key)}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <Stone status={row.status} size={18} label={row.statusLabel} />
+              <span className="font-medium">{row.name}</span>
+            </span>
+            <span className={`shrink-0 text-sm ${row.status === "missed" || row.status === "wrong" ? "font-semibold text-bad" : "text-muted"}`}>
+              {row.pointsText || row.statusLabel}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export function StepPanel({ panel }: { panel: StepPanelView | null }) {
+  if (!panel) return <p className="py-2 text-muted">Select a step to see what it asked for.</p>;
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="font-semibold">{panel.name}</p>
+        <p className="text-sm text-muted">{panel.statusLabel} · {panel.worthText}{panel.severityLabel ? ` · ${panel.severityLabel}` : ""}</p>
+        {panel.lostText && <p className="text-sm font-semibold text-bad">{panel.lostText}</p>}
+        {panel.reviewText && <p className="text-sm text-muted">{panel.reviewText}</p>}
+        {panel.description && <p>{panel.description}</p>}
+        {panel.reason && <p className="text-sm text-ink">{panel.reason}</p>}
+      </div>
+      {panel.subChecks.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {panel.subChecks.map((check) => (
+            <li key={check.description} className="flex items-baseline justify-between gap-3 text-sm">
+              <span>{check.description}</span>
+              <span className="shrink-0 font-medium">{check.pointsText || check.resultLabel}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {panel.evidence ? (
+        <blockquote className="border-l-2 border-brand pl-3">
+          <p>&ldquo;{panel.evidence.quote}&rdquo;</p>
+          {panel.evidence.timeText && <p className="text-sm text-muted">{panel.evidence.timeText}</p>}
+        </blockquote>
+      ) : (
+        <p className="text-sm text-muted">No quote stored for this step</p>
+      )}
+      {panel.coaching && (
+        <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm">{panel.coaching}</p>
+      )}
+      {panel.comparison && (
+        <table className="w-full text-left text-sm">
+          <caption className="mb-2 text-left font-semibold">Caller asked / logged</caption>
+          <thead>
+            <tr className="text-muted">
+              <th className="py-1 pr-2 font-medium">Field</th>
+              <th className="py-1 pr-2 font-medium">Caller asked</th>
+              <th className="py-1 pr-2 font-medium">Logged</th>
+              <th className="py-1 font-medium">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {panel.comparison.map((row) => (
+              <tr key={row.label} data-result={row.resultLabel}>
+                <th className="py-1 pr-2 font-medium" scope="row">{row.label}</th>
+                <td className="py-1 pr-2">{row.callerAsked}</td>
+                <td className="py-1 pr-2">{row.logged}</td>
+                <td className="py-1">{row.resultLabel}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }

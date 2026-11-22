@@ -50,9 +50,21 @@ test("ready: the Transfer money call, and choosing the flag highlights the 0:33 
   expect(screen.getByText("1 critical, 55 points lost")).toBeTruthy();
   const turns = () => screen.getAllByRole("listitem").filter((li) => li.dataset.tone);
   expect(turns()).toHaveLength(9);
-  expect(turns().filter((t) => t.dataset.selected === "true")).toHaveLength(0);
+  const highlighted = () => turns().filter((t) => t.dataset.selected === "true").map((t) => t.textContent?.match(/\d:\d\d/)?.[0]);
+  expect(highlighted()).toEqual(["0:33", "0:44"]);
+  expect(screen.getByRole("button", { name: "Required step: Submit and confirm transfer" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByText(/from your checking to your savings/)).toBeTruthy();
+  expect(screen.getByRole("row", { name: /From/ }).textContent).toContain("Reversed");
+  expect(screen.getByRole("row", { name: /To/ }).textContent).toContain("Reversed");
+  expect(screen.getByRole("link", { name: "See procedure" }).getAttribute("href")).toBe("/procedures?task=transfer_money");
+  expect(screen.queryByRole("button", { name: "I did do this" })).toBeNull();
 
-  fireEvent.click(screen.getByRole("button", { name: /Submit and confirm transfer/ }));
-  const highlighted = turns().filter((t) => t.dataset.selected === "true");
-  expect(highlighted.map((t) => t.textContent?.match(/\d:\d\d/)?.[0])).toEqual(["0:33", "0:44"]);
+  fireEvent.click(screen.getByRole("button", { name: "Required step: Greet and open" }));
+  expect(screen.queryByText(/from your checking to your savings/)).toBeNull();
+  expect(screen.queryByRole("table")).toBeNull();
+  expect(screen.getAllByText(/thank you for calling harper valley national bank/)).toHaveLength(2);
+  expect(highlighted()).toEqual(["0:02"]);
+
+  fireEvent.click(screen.getByRole("button", { name: /Moved \$114/ }));
+  expect(highlighted()).toEqual(["0:33", "0:44"]);
 });
