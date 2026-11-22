@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { resolveShellView } from "./application";
 import { createApiGateway } from "./gateway";
-import { Card, CardContent } from "./components/ui/card";
 import CallDetailPage from "./callDetail/CallDetailPage";
 import { createCallDetailScreen, parseCallId } from "./callDetail/compose";
-import { PageHeader, StateMessage, StatusLegend, Stone, StoneSprite } from "./components/pieces";
+import { StoneSprite } from "./components/pieces";
 import CallsPage from "./CallsPage.jsx";
 import { createProgressScreen, parseAgentId } from "./progress/compose";
 import ProgressPage from "./progress/ProgressPage";
+import { createProceduresScreen, parseProcedureType } from "./procedures/compose";
+import ProceduresPage from "./procedures/ProceduresPage";
 
 // all the env stuff gets read here and nowhere else
 const api = createApiGateway({
@@ -23,6 +24,7 @@ export default function App() {
   const view = resolveShellView(path, agentSettings);
   // one call detail screen per call id in the address
   const callDetail = useMemo(() => createCallDetailScreen(api, parseCallId(view.callId)), [view.callId]);
+  const procedures = useMemo(() => createProceduresScreen(api), [path]);
 
   // back/forward buttons
   useEffect(() => {
@@ -79,18 +81,7 @@ export default function App() {
 
         {view.screen.id === "progress" && <ProgressPage viewModel={progress.viewModel} controller={progress.controller} />}
 
-        {view.screen.id === "procedures" && (
-          <>
-            <PageHeader title={view.screen.title} subtitle="The required steps for each call type." />
-            <Card>
-              <CardContent className="flex flex-col items-center">
-                <Stone status="procedure" size={52} showLabel />
-                <StateMessage kind="empty" title="Procedures coming soon" message="Each call type's steps will be listed here." />
-              </CardContent>
-            </Card>
-            <div className="mt-6"><StatusLegend /></div>
-          </>
-        )}
+        {view.screen.id === "procedures" && <ProceduresPage viewModel={procedures.viewModel} controller={procedures.controller} selectedCallType={parseProcedureType(window.location.search)} />}
       </main>
     </div>
   );
