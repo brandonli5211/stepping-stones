@@ -121,16 +121,16 @@ export function StepList({ rows, selectedStepKey, onSelect }: {
         <li key={row.key}>
           <button
             type="button"
-            className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left ${selectedStepKey === row.key ? "border-brand ring-2 ring-brand" : "border-review/40"} ${row.failed ? "bg-bad-soft" : "bg-white"}`}
+            className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left ${selectedStepKey === row.key ? "border-brand ring-2 ring-brand" : "border-review/40"} ${row.status === "missed" || row.status === "wrong" ? "bg-bad-soft" : "bg-white"}`}
             aria-label={`Required step: ${row.name}`}
             aria-pressed={selectedStepKey === row.key}
             onClick={() => onSelect(row.key)}
           >
             <span className="flex min-w-0 items-center gap-2">
-              <Stone status={row.failed ? "wrong" : "completed"} size={18} label={row.statusLabel} />
+              <Stone status={row.status} size={18} label={row.statusLabel} />
               <span className="font-medium">{row.name}</span>
             </span>
-            <span className={`shrink-0 text-sm ${row.failed ? "font-semibold text-bad" : "text-muted"}`}>
+            <span className={`shrink-0 text-sm ${row.status === "missed" || row.status === "wrong" ? "font-semibold text-bad" : "text-muted"}`}>
               {row.pointsText || row.statusLabel}
             </span>
           </button>
@@ -148,6 +148,7 @@ export function StepPanel({ panel }: { panel: StepPanelView | null }) {
         <p className="font-semibold">{panel.name}</p>
         <p className="text-sm text-muted">{panel.statusLabel} · {panel.worthText}{panel.severityLabel ? ` · ${panel.severityLabel}` : ""}</p>
         {panel.lostText && <p className="text-sm font-semibold text-bad">{panel.lostText}</p>}
+        {panel.reviewText && <p className="text-sm text-muted">{panel.reviewText}</p>}
         {panel.description && <p>{panel.description}</p>}
         {panel.reason && <p className="text-sm text-ink">{panel.reason}</p>}
       </div>

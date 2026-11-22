@@ -81,13 +81,18 @@ export function procedureHref(callType: string): string {
   return PROCEDURE_KEY.test(callType) ? `/procedures?task=${callType}` : "/procedures";
 }
 
+function settledLoss(status: StepStatus): boolean {
+  return status === "missed" || status === "wrong";
+}
+
 export function stepRow(step: Step): StepRowView {
   return {
     key: step.key,
     name: step.name,
+    status: step.status,
     statusLabel: stepStatusLabel(step.status),
-    pointsText: stepPointsText(step.pointsLost),
-    failed: step.status === "missed" || step.status === "wrong",
+    // a pending step has not lost points yet, so the row keeps the "Under review" words
+    pointsText: settledLoss(step.status) ? stepPointsText(step.pointsLost) : "",
   };
 }
 
@@ -98,7 +103,7 @@ function shown(value: string | null): string {
 
 // the selected step, worded. the field table is the server's result, and only on a missed or wrong transfer step.
 export function stepPanel(step: Step, details: TypeDetails): StepPanelView {
-  const failed = step.status === "missed" || step.status === "wrong";
+  const failed = settledLoss(step.status);
   const comparison = failed && details.type === "transfer_money" && details.fields.length > 0
     ? details.fields.map((row) => ({
       label: row.label,
@@ -114,12 +119,14 @@ export function stepPanel(step: Step, details: TypeDetails): StepPanelView {
     reason: step.detail,
     statusLabel: stepStatusLabel(step.status),
     worthText: `Worth ${step.points} ${step.points === 1 ? "point" : "points"}`,
-    lostText: stepPointsText(step.pointsLost) || null,
+    lostText: failed ? stepPointsText(step.pointsLost) || null : null,
+    reviewText: step.pointsUnderReview > 0 ? `${step.pointsUnderReview} ${step.pointsUnderReview === 1 ? "point" : "points"} under review` : null,
     severityLabel: SEVERITY_LABELS[step.severity],
     subChecks: step.subChecks.map((check) => ({
       description: check.description,
       resultLabel: SUB_LABELS[check.result],
-      pointsText: check.result === "passed" ? "" : stepPointsText(check.points),
+      // only a failed sub-check has lost its points; a pending one keeps its "Under review" label
+      pointsText: check.result === "failed" ? stepPointsText(check.points) : "",
     })),
     evidence: step.evidence && { quote: step.evidence.quote, timeText: formatTime(step.evidence.startSeconds) },
     coaching: failed ? step.coaching : null,

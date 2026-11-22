@@ -85,8 +85,8 @@ test("the wrong transfer step shows the quote, the coaching and the reversed acc
   const step = detail.steps.find((item) => item.key === "submit_and_confirm_transfer");
   if (!step) throw new Error("missing step");
   expect(stepRow(step)).toEqual({
-    key: "submit_and_confirm_transfer", name: "Submit and confirm transfer", statusLabel: "Wrong",
-    pointsText: "\u221255 points", failed: true,
+    key: "submit_and_confirm_transfer", name: "Submit and confirm transfer", status: "wrong", statusLabel: "Wrong",
+    pointsText: "\u221255 points",
   });
   const panel = stepPanel(step, detail.typeDetails);
   expect(panel.evidence).toEqual({ quote: "okay and that was from your savings to your checking account", timeText: "0:33" });
@@ -110,6 +110,38 @@ test("a blank compared value is shown as a dash, and the stored result is not re
     fields: [{ field: "transfer_amount", label: "Amount", callerAsked: null, logged: "  ", result: "mismatch" }],
   });
   expect(panel.comparison).toEqual([{ label: "Amount", callerAsked: "\u2014", logged: "\u2014", resultLabel: "Doesn't match" }]);
+});
+
+test("an under-review step stays pending, and a pending sub-check is not a deduction", () => {
+  const detail = sample();
+  const base = detail.steps.find((item) => item.key === "submit_and_confirm_transfer");
+  if (!base) throw new Error("missing step");
+  const pending = {
+    ...base,
+    status: "under_review" as const,
+    pointsLost: 10,
+    pointsUnderReview: 5,
+    subChecks: [{ key: "confirmed", description: "Caller confirmed", points: 5, result: "under_review" as const }],
+  };
+  expect(stepRow(pending)).toMatchObject({ status: "under_review", statusLabel: "Under review", pointsText: "" });
+  const panel = stepPanel(pending, detail.typeDetails);
+  expect(panel.lostText).toBeNull();
+  expect(panel.reviewText).toBe("5 points under review");
+  expect(panel.coaching).toBeNull();
+  expect(panel.comparison).toBeNull();
+  expect(panel.subChecks).toEqual([{ description: "Caller confirmed", resultLabel: "Under review", pointsText: "" }]);
+
+  const mixed = stepPanel({
+    ...base,
+    pointsUnderReview: 1,
+    subChecks: [
+      { key: "logged_matches", description: "Logged values match what the caller asked", points: 40, result: "failed" },
+      { key: "confirmed", description: "Caller confirmed", points: 5, result: "under_review" },
+    ],
+  }, detail.typeDetails);
+  expect(mixed.lostText).toBe("\u221255 points");
+  expect(mixed.reviewText).toBe("1 point under review");
+  expect(mixed.subChecks.map((check) => check.pointsText || check.resultLabel)).toEqual(["\u221240 points", "Under review"]);
 });
 
 test("a completed step shows its quote and no coaching or field table", () => {

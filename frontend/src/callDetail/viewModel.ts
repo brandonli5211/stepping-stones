@@ -1,5 +1,5 @@
 import type { ScoreBand } from "../domain";
-import type { Severity } from "./entities";
+import type { Severity, StepStatus } from "./entities";
 
 // View Model for the call detail page: exactly what the page draws. The presenter sets it, the page subscribes.
 
@@ -22,9 +22,9 @@ export type FlagCardView = { stepKey: string; title: string; pointsText: string;
 export type StepRowView = {
   key: string;
   name: string;
+  status: StepStatus;
   statusLabel: string;
   pointsText: string;
-  failed: boolean;
 };
 
 export type StepPanelView = {
@@ -35,6 +35,7 @@ export type StepPanelView = {
   statusLabel: string;
   worthText: string;
   lostText: string | null;
+  reviewText: string | null;
   severityLabel: string | null;
   subChecks: { description: string; resultLabel: string; pointsText: string }[];
   evidence: { quote: string; timeText: string | null } | null;
