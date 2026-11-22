@@ -126,7 +126,7 @@ export default function CallsPage() {
               return (
                 <tr key={call.id}>
                   <td><strong>{when.day}</strong><small>{when.time}</small></td>
-                  <td><strong>{call.call_type_name}</strong><small>Call {call.external_id}</small></td>
+                  <td><a href={`/calls/${call.id}`} className="block hover:underline"><strong>{call.call_type_name}</strong><small>Call {call.external_id}</small></a></td>
                   <td><span className="stones">{call.steps.map((s, i) => <Stone key={s.key} step={s} index={i} />)}</span></td>
                   <td>{call.score == null ? "–" : <><strong>{call.score}%</strong><small>{call.steps_completed} of {call.steps_total}</small></>}</td>
                   <td className={result.className}>{result.className === "bad" ? <strong>{result.text}</strong> : result.text}</td>
