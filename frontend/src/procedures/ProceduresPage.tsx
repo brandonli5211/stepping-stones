@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { PageHeader, StateMessage, Stone } from "../components/pieces";
+import { PageHeader, StateMessage, Stone, StoneLoader } from "../components/pieces";
 import { Card, CardContent } from "../components/ui/card";
 import type { ViewProceduresController } from "./controller";
 import type { ProceduresViewModel } from "./viewModel";
@@ -14,7 +14,7 @@ export default function ProceduresPage({ viewModel, controller, selectedCallType
   return (
     <>
       <PageHeader title="Procedures" subtitle="The required steps for each call type." />
-      {state.kind === "loading" && <p className="text-muted" role="status">{state.message}</p>}
+      {state.kind === "loading" && <StoneLoader message={state.message} />}
       {state.kind === "error" && <Card><CardContent><StateMessage kind="error" title={state.title} message={state.message} /></CardContent></Card>}
       {state.kind === "empty" && <Card><CardContent><StateMessage kind="empty" title={state.message} /></CardContent></Card>}
       {state.kind === "ready" && <div className="flex max-w-4xl flex-col gap-6">

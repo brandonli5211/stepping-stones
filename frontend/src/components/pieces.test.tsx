@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { cn } from "../lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { PageHeader, ScoreRing, StateMessage, StatusLegend, Stone, StoneSprite } from "./pieces";
+import { FINDING_FOOTING, PageHeader, ScoreRing, StateMessage, StatusLegend, Stone, StoneLoader, StoneSprite } from "./pieces";
 
 test("cn joins classes and lets the later tailwind class win", () => {
   expect(cn("px-2", false && "hidden", "px-4")).toBe("px-4");
@@ -41,6 +41,15 @@ test("page header shows title, subtitle and back link", () => {
   expect(screen.getByRole("heading", { name: "Call 7" })).toBeTruthy();
   expect(screen.getByText("Soon")).toBeTruthy();
   expect(screen.getByRole("link").getAttribute("href")).toBe("/");
+});
+
+test("the loading path shows five stones, one active, and keeps the screen's sentence", () => {
+  const { container } = render(<StoneLoader message="Loading this call…" />);
+  expect(screen.getByText(FINDING_FOOTING)).toBeTruthy();
+  expect(screen.getByRole("status").textContent).toContain("Loading this call");
+  const stones = container.querySelectorAll("svg[data-active]");
+  expect(stones).toHaveLength(5);
+  expect([...stones].filter((stone) => stone.getAttribute("data-active") === "true")).toHaveLength(1);
 });
 
 test("state message: error is an alert, empty isn't", () => {
