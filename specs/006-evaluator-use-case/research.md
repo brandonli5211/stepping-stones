@@ -14,7 +14,7 @@
 
 **Rationale**: Decisions returns typed choices rather than arbitrary JSON. Supplying stored turn IDs and finite field choices lets Python retain exact, verifiable facts rather than trusting a model-made coaching judgment. A caller may supply several values in one turn, so collection choices must not be restricted to agent turns. The matcher never receives the dataset answer key.
 
-**Alternatives considered**: Model-authored scores were rejected because they conflict with server-owned judgment. Local Ollama is intentionally deferred with the rest of #38.
+**Alternatives considered**: Model-authored scores were rejected because they conflict with server-owned judgment. A local Ollama model was the original #38 plan and was not built. `POST /calls/{id}` remains that older preview and does not save steps.
 
 ## R3 — Procedure ordering and terminal state
 

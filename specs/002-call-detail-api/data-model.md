@@ -102,5 +102,5 @@ type that has its own block. Full shape and example:
 
 Read only. The detail reflects whatever step results are stored at the time of
 the request: a `pending` call (no steps) returns a null score, no flags and an
-empty step list; a call whose steps are later rewritten by #38 returns the new
+empty step list; a call whose steps are later rewritten by `uv run analyze` (the shipped form of #38) returns the new
 values on the next read. Nothing is cached.

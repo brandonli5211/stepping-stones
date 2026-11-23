@@ -46,7 +46,8 @@ under-review steps add no note. One note per step.
 0:33 evidence). A call with no wrong steps cannot produce a "Wrong" note.
 
 **Rejected**: A `call_step_notes` table for several notes per step: a schema
-change and a writer that does not exist yet (#38). Recorded as a follow-up if
+change and a writer that did not exist yet. That writer later shipped as
+`uv run analyze` (OpenAI Decisions), not as a local Ollama model. Recorded as a follow-up if
 the page needs the second "Wrong" note at 0:44.
 
 ## R3. Score, counts, critical count, provisional score

@@ -40,4 +40,4 @@ Order checks, pay bill and reset password are written (field types `address`, `p
 
 ## Used by the API
 
-`POST /calls/{call_id}` (backend/app/adapters/http/analyze.py) reads these files; the prompt for the local model is built in backend/app/domain/call_analysis.py.
+`uv run analyze` reads these files when it evaluates a stored call with OpenAI Decisions and saves the step results. `POST /calls/{call_id}` (backend/app/adapters/http/analyze.py) also reads them to preview a prompt, or an Ollama draft, and does not save steps. That preview prompt is built in backend/app/domain/call_analysis.py.

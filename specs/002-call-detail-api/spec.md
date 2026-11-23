@@ -227,8 +227,8 @@ not-found response (404) with a short message.
   notes linking it to steps.
 - **Step result**: one required step of the call: name, position, status,
   points worth, points lost, severity, and its details (description, sub-checks,
-  proving quote and time, coaching phrase). Stored by #33 now and #38 later; only read
-  here.
+  proving quote and time, coaching phrase). Stored by #33's demo results, and later by
+  `uv run analyze` (OpenAI Decisions, the shipped form of #38). This use case only reads them.
 - **Sub-check**: one scored part of a step: description, points, result.
 - **Flag**: a step that was missed or done wrong, called out on the screen:
   step name, status, severity, points lost, message (see FR-010, FR-019).

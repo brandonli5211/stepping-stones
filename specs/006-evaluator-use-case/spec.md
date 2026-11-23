@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-20
 
-**Status**: Draft
+**Status**: Shipped (pull request #53). This command replaced the local Ollama analyzer in issue #38. `POST /calls/{id}` is still an Ollama preview and does not save step results.
 
 **Input**: User description: "Replace PRs #51 and #52 with one end-to-end evaluator use case that uses a procedure and call evidence to save trustworthy step results for issue #38."
 
