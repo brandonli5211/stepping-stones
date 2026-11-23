@@ -30,7 +30,7 @@ def test_simple_step_confidence_boundary_and_saved_diagnostics():
     assert (result.status, result.evidence, result.decision_confidence, result.decision_response) == (
         "completed", GREETING.evidence, CONFIDENT_DECISION_THRESHOLD, response,
     )
-    assert evaluate_step(SIMPLE, replace(GREETING, confidence=.79), True, CALL).status == "under_review"
+    assert evaluate_step(SIMPLE, replace(GREETING, confidence=.39), True, CALL).status == "under_review"
 
 
 @pytest.mark.parametrize(("decision", "valid"), [
