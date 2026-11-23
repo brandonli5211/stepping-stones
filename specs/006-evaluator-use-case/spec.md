@@ -101,3 +101,4 @@ As a coach, I need every remaining required step to have a final, explainable st
 - A completed step must satisfy any procedure requirement that applies to an agent's logged action as well as spoken evidence.
 - The existing call-detail and progress contracts are preserved; this feature enriches their stored inputs rather than changing their user-facing meaning.
 - Human review resolution is outside this feature; it consumes the under-review state created here.
+- A hand-labelled accuracy harness is out of scope. Issue #39 was closed without building one. The demo uses the stored results sheet, which is not a measured accuracy study.
