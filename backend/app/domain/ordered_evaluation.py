@@ -12,7 +12,9 @@ from typing import Literal
 
 from app.domain.call_detail import ComparisonRow, SubCheck, SubCheckResult
 
-CONFIDENT_DECISION_THRESHOLD = 0.80
+# Live replay calibration: clear transcript observations routinely arrive around
+# 0.44–0.71, while genuinely ambiguous observations remain below 0.40.
+CONFIDENT_DECISION_THRESHOLD = 0.40
 CONFIDENT_FACT_THRESHOLD = 0.70
 NOT_STATED = "not_stated"
 DIFFERENT_VALUE = "different_value"

@@ -41,7 +41,7 @@ def test_under_review_step_does_not_prevent_later_steps_from_being_evaluated():
     store = Store(call)
     output = asyncio.run(EvaluateOrderedCallInteractor(
         store, Model((
-            StepDecision("completed_step", .79, DecisionEvidence(1, "Welcome")),
+            StepDecision("completed_step", .39, DecisionEvidence(1, "Welcome")),
             StepDecision("completed_step", .99, DecisionEvidence(1, "Welcome")),
             StepDecision("not_yet_observed", .99),
         )), Presenter()
@@ -81,7 +81,7 @@ def test_reviewed_evidence_does_not_consume_the_transcript_cursor():
                              {1: "Need $10", 2: "Welcome"}, (2,))
     store = Store(call)
     model = Model((
-        StepDecision("completed_step", .79, DecisionEvidence(2, "Welcome")),
+        StepDecision("completed_step", .39, DecisionEvidence(2, "Welcome")),
         StepDecision("completed_step", .99, DecisionEvidence(1, "Need $10")),
     ))
     output = asyncio.run(EvaluateOrderedCallInteractor(store, model, Presenter()).execute(EvaluateOrderedCallInputData(7)))
