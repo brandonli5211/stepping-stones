@@ -4,7 +4,7 @@ import { createApiGateway } from "./gateway";
 import CallDetailPage from "./callDetail/CallDetailPage";
 import { createCallDetailScreen, parseCallId } from "./callDetail/compose";
 import { StoneSprite } from "./components/pieces";
-import CallsPage from "./CallsPage.jsx";
+import CallsPage from "./CallsPage";
 import { createProgressScreen, parseAgentId } from "./progress/compose";
 import ProgressPage from "./progress/ProgressPage";
 import { createProceduresScreen, parseProcedureType } from "./procedures/compose";
