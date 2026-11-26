@@ -38,7 +38,7 @@ Unchanged by Phase 1.
 
 **Out of scope for this plan**: loading the #33 seed file into the #29 tables
 (#33 or a follow-up); storing several notes per step (needs a table and a
-writer, #38); moving `GET /calls` and `POST /calls/{id}` out of
+writer; that writer later shipped as `uv run analyze`, not a local Ollama model); moving `GET /calls` and `POST /calls/{id}` out of
 `app/calls_api.py` into Clean Architecture layers (separate refactor).
 
 ## Technical Context

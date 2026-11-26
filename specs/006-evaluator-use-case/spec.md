@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-20
 
-**Status**: Draft
+**Status**: Shipped (pull request #53). This command replaced the local Ollama analyzer in issue #38. `POST /calls/{id}` is still an Ollama preview and does not save step results.
 
 **Input**: User description: "Replace PRs #51 and #52 with one end-to-end evaluator use case that uses a procedure and call evidence to save trustworthy step results for issue #38."
 
@@ -101,3 +101,4 @@ As a coach, I need every remaining required step to have a final, explainable st
 - A completed step must satisfy any procedure requirement that applies to an agent's logged action as well as spoken evidence.
 - The existing call-detail and progress contracts are preserved; this feature enriches their stored inputs rather than changing their user-facing meaning.
 - Human review resolution is outside this feature; it consumes the under-review state created here.
+- A hand-labelled accuracy harness is out of scope. Issue #39 was closed without building one. The demo uses the stored results sheet, which is not a measured accuracy study.

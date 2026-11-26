@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-11
 
-**Status**: Draft
+**Status**: Shipped as a preview only. `POST /calls/{id}` can return a prompt or an Ollama draft. It does not save step results. Saved scores come from `uv run analyze` (OpenAI Decisions), specified in `specs/006-evaluator-use-case`.
 
 **Input**: User description: "Feature C — AnalyzeCall (issue #33). Analyzing a call builds the coaching prompt for one stored call from its transcript (or its turns when no raw transcript is stored), its procedure rules and the shared prompt template. It either returns the prompt (dry run) or asks the local language model and returns its parsed answer. Bring it into Clean Architecture compliance with the same request, response, status codes and messages. Settings are read only at the outer edge; a missing rules file still answers 503 at request time. Delete the old module once everything has moved and update the docs line that names it. The model is not running locally, so verify with dry-run responses byte-identical before and after, the not-found and no-transcript cases, and fake-model tests. Exactly one use case: AnalyzeCall."
 
