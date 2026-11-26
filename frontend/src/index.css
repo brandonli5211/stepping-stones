@@ -13,3 +13,16 @@
   --color-review: #9aa7ab;
   --color-warn: #f1c40f;
 }
+
+@keyframes stone-ripple {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+.stone-ripple {
+  animation: stone-ripple 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stone-ripple { animation: none; }
+}

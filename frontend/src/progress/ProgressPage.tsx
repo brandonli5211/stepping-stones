@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { PageHeader, StateMessage, StatusLegend } from "../components/pieces";
+import { PageHeader, StateMessage, StatusLegend, StoneLoader } from "../components/pieces";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import type { ViewProgressController } from "./controller";
@@ -25,7 +25,7 @@ export default function ProgressPage({ viewModel, controller }: {
         {(state.kind === "ready" || state.kind === "empty") && state.showDemoBadge && <Badge className="mt-3">Demo data</Badge>}
       </div>
 
-      {state.kind === "loading" && <p className="text-muted" role="status">{state.message}</p>}
+      {state.kind === "loading" && <StoneLoader message={state.message} />}
 
       {state.kind === "error" && (
         <Card><CardContent><StateMessage kind="error" title={state.title} message={state.message} /></CardContent></Card>

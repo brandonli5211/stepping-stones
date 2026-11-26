@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { PageHeader, StateMessage } from "../components/pieces";
+import { PageHeader, StateMessage, StoneLoader } from "../components/pieces";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import type { ViewCallDetailController } from "./controller";
 import { FlagList, ScorePanel, StepList, StepPanel, Transcript } from "./parts";
@@ -24,7 +24,7 @@ export default function CallDetailPage({ viewModel, controller }: {
     return (
       <>
         <PageHeader title="Call review" back={BACK} />
-        <p className="text-muted" role="status">{state.message}</p>
+        <StoneLoader message={state.message} />
       </>
     );
   }

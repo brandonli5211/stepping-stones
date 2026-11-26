@@ -42,7 +42,7 @@ export function Stone({ status, label, size = 26, showLabel = false }: {
   const text = label ?? STATUS_LABELS[known];
   return (
     <span className="inline-flex items-center gap-2" title={text} data-status={known}>
-      <svg viewBox={VIEWBOX} width={size} height={(size * 26) / 40} className="overflow-visible" aria-hidden="true">
+      <svg viewBox={VIEWBOX} width={size} height={(size * 26) / 40} className="overflow-visible drop-shadow-sm" aria-hidden="true">
         <use href="#stone" className={`${look.face} stroke-[1.2]`} />
         {look.detail && (
           <use href={look.detail} className={known === "wrong" ? "stroke-white stroke-2" : "stroke-bad stroke-[1.4]"} />
@@ -50,6 +50,44 @@ export function Stone({ status, label, size = 26, showLabel = false }: {
       </svg>
       <span className={showLabel ? "text-xs text-muted" : "sr-only"}>{text}</span>
     </span>
+  );
+}
+
+// Five stones, the middle one active. The screen's own sentence stays for assistive technology.
+const PATH_LIFTS = [0, 18, 36, 18, 0];
+const ACTIVE_STONE = 2;
+export const FINDING_FOOTING = "Finding your footing…";
+
+export function StoneLoader({ message }: { message: string }) {
+  return (
+    <div role="status" className="flex flex-col items-center gap-5 py-16">
+      <div className="flex items-end gap-4" aria-hidden="true">
+        {PATH_LIFTS.map((lift, index) => {
+          const active = index === ACTIVE_STONE;
+          return (
+            <span key={index} className="relative grid place-items-center" style={{ marginBottom: lift }}>
+              {active && (
+                <>
+                  <span className="stone-ripple absolute h-16 w-24 rounded-[50%] border-2 border-brand/35" />
+                  <span className="stone-ripple absolute h-24 w-36 rounded-[50%] border border-brand/20 [animation-delay:200ms]" />
+                </>
+              )}
+              <svg
+                viewBox={VIEWBOX}
+                width={active ? 72 : 52}
+                height={active ? 46 : 34}
+                data-active={active ? "true" : "false"}
+                className={`relative overflow-visible drop-shadow-md ${active ? "stone-ripple" : "opacity-90"}`}
+              >
+                <use href="#stone" className={active ? "fill-brand stroke-brand stroke-[1.2]" : "fill-white stroke-review stroke-[1.2]"} />
+              </svg>
+            </span>
+          );
+        })}
+      </div>
+      <p className="text-base font-medium text-brand">{FINDING_FOOTING}</p>
+      <p className="sr-only">{message}</p>
+    </div>
   );
 }
 
